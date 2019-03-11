@@ -7,7 +7,7 @@ import Api from './utils/api';
 class App extends Component {
   constructor(props) {
     super(props);
-    // chrome.runtime.sendMessage({ action: 'popupOpen' });
+    chrome.runtime.sendMessage({ action: 'popupOpen' });
 
     this.state = {
       resumeCount: 0,
@@ -41,7 +41,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    // this.fetchUser();
+    this.fetchUser();
     this.fetchPosition();
     this.getResumeCount();
     // this.getCount('mailCount');
@@ -50,7 +50,7 @@ class App extends Component {
 
   fetchUser = async () => {
     try {
-      await chrome.storage.local.get(null, response => {
+      await chrome.storage.local.get(['user'], response => {
         if (response.user && response.user.check === true) {
           this.setState({
             // isLoggedIn: true,
@@ -59,7 +59,7 @@ class App extends Component {
         }
       });
     } catch (err) {
-      alert(err);
+      alert('failed to fetch user', err);
     }
   };
 
@@ -70,7 +70,7 @@ class App extends Component {
       });
       this.setState({ positions });
     } catch (err) {
-      alert(err);
+      alert('failed to fetch positions', err);
     }
   };
 
@@ -195,8 +195,7 @@ class App extends Component {
     Axios.post(Api.sendSMS, {
       user_id: this.state.user.user_id,
       rm_code: this.state.candidate.rm_code,
-      // recipient: this.candidate.mobile,
-      recipient: '01072214890',
+      recipient: this.candidate.mobile,
       body: this.state.sms.content,
       position: this.state.selectedPosition
     });
@@ -257,7 +256,7 @@ class App extends Component {
         this.setState({
           user: response.user,
           history: response.history,
-          candidate: response.candidate,
+          candidate: response.candidate.result,
           isLoggedIn: true,
           fetchingCrawlingData: false,
           resumeCount: response.resumeCount
@@ -337,15 +336,15 @@ class App extends Component {
               size="sm"
               onClick={this.crawling}
             >
-              Save
+              저장
             </Button>
             <Button style={{ float: 'right' }} size="sm" onClick={this.reset}>
-              Reset
+              초기화
             </Button>
             <h2 className="text-center">Recruit Manager</h2>
             <br />
             <Row>
-              <Col>Resume: {resumeCount || 'null'}</Col>
+              <Col>Resume: {resumeCount || 0}</Col>
               <Col />
               <Col className="text-right">{user.user_name || 'null'}</Col>
             </Row>
@@ -488,7 +487,8 @@ class App extends Component {
                       </Form.Label>
                       <Col sm={10}>
                         <Form.Control
-                          plaintext
+                          size="sm"
+                          required
                           value={
                             candidate && candidate.email
                               ? candidate.email
@@ -518,7 +518,6 @@ class App extends Component {
                           type="text"
                           size="sm"
                           required
-                          plaintext
                           value={selectedPosition}
                           onChange={event =>
                             this.setState({
@@ -622,7 +621,6 @@ class App extends Component {
                       </Form.Label>
                       <Col sm={10}>
                         <Form.Control
-                          plaintext
                           size="sm"
                           value={
                             candidate && candidate.mobile
