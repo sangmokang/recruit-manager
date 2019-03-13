@@ -50,18 +50,10 @@ chrome.extension.onConnect.addListener(function(port) {
           await getHTML();
           await getHistory();
           await crawlCandidate();
-          // await chrome.storage.local.get(null, response => {
-          //   console.log(response);
-          //   // port.portMessage(response);
-          // });
         } catch (error) {
           console.log(error);
         }
         await compileMessage(myPort);
-        // chrome.storage.local.get(null, response => {
-        //   console.log(response);
-        //   port.postMessage(response);
-        // });
       });
     } else if (msg === 'Requesting reset')
       chrome.storage.local.set(
