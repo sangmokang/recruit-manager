@@ -14,9 +14,7 @@ import {
   Row
 } from 'antd'
 import Highlighter from 'react-highlight-words'
-
 export default class Mail extends Component {
-  _isMounted = false
   constructor(props) {
     super(props)
     this.state = {
@@ -34,6 +32,9 @@ export default class Mail extends Component {
       visible: false,
       searchText: ''
     }
+
+    this.signal = Axios.CancelToken.source()
+
     this.columns = [
       {
         title: '수신인',
@@ -171,44 +172,63 @@ export default class Mail extends Component {
     this.setState({ searchText: '' })
   }
 
-  componentWillUnmount() {
-    this._isMounted = false
-  }
-
   componentDidMount() {
-    this._isMounted = true
     this.fetch()
   }
 
+  componentWillUnmount() {
+    this.signal.cancel('mail unmount')
+  }
+
   fetch = () => {
+    // cancel the previous request
+    // if (typeof this._source != typeof undefined) {
+    //   this._source.cancel('Operation canceled due to new request.')
+    // }
+
+    // // save the new request for cancellation
+    // this._source = Axios.CancelToken.source()
+
     this.setState({ loading: true })
-    Axios.post(API.getMail, {
-      user_id: this.props.user_id,
-      rm_code: '*'
-    }).then(data => {
-      const pagination = { ...this.state.pagination }
-      // Read total count from server
-      // pagination.total = data.totalCount
-      console.log('mail-fetch', data.data.result)
+    Axios.post(
+      API.getMail,
+      {
+        user_id: this.props.user_id,
+        rm_code: '*'
+      },
+      { cancelToken: this.signal.token }
+    )
+      .then(data => {
+        const pagination = { ...this.state.pagination }
+        // Read total count from server
+        // pagination.total = data.totalCount
+        // console.log('mail-fetch', data.data.result)
 
-      const dateSortedData = data.data.result.sort((a, b) => {
-        // descend
-        return (
-          new Date(b.modified_date).getTime() -
-          new Date(a.modified_date).getTime()
-        )
+        const dateSortedData = data.data.result.sort((a, b) => {
+          // descend
+          return (
+            new Date(b.modified_date).getTime() -
+            new Date(a.modified_date).getTime()
+          )
+        })
+
+        for (let i = 0; i < dateSortedData.length; i++) {
+          dateSortedData[i].key = i
+        }
+
+        this.setState({
+          loading: false,
+          data: dateSortedData,
+          pagination
+        })
       })
-
-      for (let i = 0; i < dateSortedData.length; i++) {
-        dateSortedData[i].key = i
-      }
-
-      this.setState({
-        loading: false,
-        data: dateSortedData,
-        pagination
+      .catch(error => {
+        if (Axios.isCancel(error)) {
+          console.log('Mail Request canceled', error)
+        } else {
+          console.log(error)
+        }
       })
-    })
   }
 
   onSelectChange = async (selectedRowKeys, selectedRows) => {

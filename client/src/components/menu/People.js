@@ -25,9 +25,9 @@ import {
 } from 'antd'
 import Highlighter from 'react-highlight-words'
 import { sendSMS, koreanAgetoYear } from '../../util/UtilFunction'
+import { withRouter } from 'react-router-dom'
 
-export default class People extends Component {
-  _isMounted = false
+class People extends Component {
   constructor(props) {
     super(props)
     this.state = {
@@ -67,6 +67,7 @@ export default class People extends Component {
       editRecord: {},
       sortedInfo: null
     }
+    this.signal = Axios.CancelToken.source()
   }
 
   handleChange = (pagination, filters, sorter) => {
@@ -379,12 +380,25 @@ export default class People extends Component {
     // await console.log('this.props.user_id--ppp', this.props)
     // await console.log('this.props.user_id', this.props.user_id)
     // await console.log('this.props.user_id2', this.state.clickedData.rm_code)
+
+    // cancel the previous request
+    if (typeof this._source !== typeof undefined) {
+      this._source.cancel('Operation canceled due to new request.')
+    }
+
+    // save the new request for cancellation
+    this._source = Axios.CancelToken.source()
+
     if (rm_code && !memoData) {
-      await Axios.post(API.rmDetail, {
-        user_id: this.props.user_id,
-        rm_code: this.state.clickedData.rm_code
-        // rm_code: 'incrute_2017042102318'
-      })
+      await Axios.post(
+        API.rmDetail,
+        {
+          user_id: this.props.user_id,
+          rm_code: this.state.clickedData.rm_code
+          // rm_code: 'incrute_2017042102318'
+        },
+        { cancelToken: this._source.token }
+      )
         .then(res => {
           console.log('getResumeDetail_res', res.data.result)
 
@@ -392,22 +406,34 @@ export default class People extends Component {
             resumeDetailData: res.data.result
           })
         })
-        .catch(err => {
-          console.log(err.response)
+        .catch(error => {
+          if (Axios.isCancel(error)) {
+            console.log('People Fetch Request canceled', error)
+          } else {
+            console.log(error)
+          }
         })
     } else if (memoData) {
-      await Axios.post(API.rmDetail, {
-        user_id: memoData.user_id,
-        rm_code: memoData.rm_code
-      })
+      await Axios.post(
+        API.rmDetail,
+        {
+          user_id: memoData.user_id,
+          rm_code: memoData.rm_code
+        },
+        { cancelToken: this._source.token }
+      )
         .then(res => {
           console.log('this-memoData?', res.data.result)
           this.setState({
             resumeDetailData: res.data.result
           })
         })
-        .catch(err => {
-          console.log(err.response)
+        .catch(error => {
+          if (Axios.isCancel(error)) {
+            console.log('People Fetch Request canceled', error)
+          } else {
+            console.log(error)
+          }
         })
     }
   }
@@ -416,42 +442,55 @@ export default class People extends Component {
     this.setState({
       loading: true
     })
-    Axios.post(API.mainTable, {
-      user_id: this.props.user_id,
-      under_birth: 1900,
-      upper_birth: 2100,
-      top_school: false,
-      keyword: ''
-    }).then(data => {
-      const pagination = { ...this.state.pagination }
-      // Read total count from server
-      // pagination.total = data.totalCount
-      pagination.total = 200
 
-      const dateSortedData = data.data.result.sort((a, b) => {
-        // descend
-        return (
-          new Date(b.modified_date).getTime() -
-          new Date(a.modified_date).getTime()
-        )
-      })
+    Axios.post(
+      API.mainTable,
+      {
+        user_id: this.props.user_id,
+        under_birth: 1900,
+        upper_birth: 2100,
+        top_school: false,
+        keyword: ''
+      },
+      { cancelToken: this.signal.token }
+    )
+      .then(data => {
+        const pagination = { ...this.state.pagination }
+        // Read total count from server
+        // pagination.total = data.totalCount
+        pagination.total = 200
 
-      const result = dateSortedData.map((row, i) => {
-        const each = Object.assign({}, row)
-        each.key = i
-        if (each.url.includes('jobkorea')) each.website = 'jobkorea'
-        else if (each.url.includes('saramin')) each.website = 'saramin'
-        else if (each.url.includes('linkedin')) each.website = 'linkedin'
-        else if (each.url.includes('incruit')) each.website = 'incruit'
-        return each
+        const dateSortedData = data.data.result.sort((a, b) => {
+          // descend
+          return (
+            new Date(b.modified_date).getTime() -
+            new Date(a.modified_date).getTime()
+          )
+        })
+
+        const result = dateSortedData.map((row, i) => {
+          const each = Object.assign({}, row)
+          each.key = i
+          if (each.url.includes('jobkorea')) each.website = 'jobkorea'
+          else if (each.url.includes('saramin')) each.website = 'saramin'
+          else if (each.url.includes('linkedin')) each.website = 'linkedin'
+          else if (each.url.includes('incruit')) each.website = 'incruit'
+          return each
+        })
+        // console.log('fetch-result', result)
+        this.setState({
+          loading: false,
+          dataSource: result,
+          pagination
+        })
       })
-      // console.log('fetch-result', result)
-      this.setState({
-        loading: false,
-        dataSource: result,
-        pagination
+      .catch(error => {
+        if (Axios.isCancel(error)) {
+          console.log('People Fetch Request canceled', error)
+        } else {
+          console.log(error)
+        }
       })
-    })
   }
 
   fetchPosition = () => {
@@ -530,15 +569,19 @@ export default class People extends Component {
     // console.log('upper_birth', upperBirth)
 
     this.setState({ loading: true })
-    Axios.post(API.viewMainTablePosition, {
-      user_id: this.props.user_id,
-      under_birth: underBirth || 1900,
-      upper_birth: upperBirth || 2400,
-      top_school: isTopSchool,
-      keyword: unitedSearch
-      // position: position
-      // keyword: andOr
-    }).then(data => {
+    Axios.post(
+      API.viewMainTablePosition,
+      {
+        user_id: this.props.user_id,
+        under_birth: underBirth || 1900,
+        upper_birth: upperBirth || 2400,
+        top_school: isTopSchool,
+        keyword: unitedSearch
+        // position: position
+        // keyword: andOr
+      },
+      { cancelToken: this.signal.token }
+    ).then(data => {
       const pagination = { ...this.state.pagination }
       pagination.total = 200
 
@@ -878,8 +921,6 @@ export default class People extends Component {
   }
 
   handleMemoDelete = async record => {
-    console.log('record_key', record)
-    // console.log('record_key', record_key)
     try {
       await Axios.post(API.deleteMemo, {
         user_id: this.props.user_id,
@@ -888,14 +929,6 @@ export default class People extends Component {
 
       await console.log('memo deleted')
       await this.getResumeDetail(this.state.clickedData.rm_code)
-
-      // await this.props.handleMemoAddCancel()
-      // const memoData = await {
-      //   user_id: this.props.user_id,
-      //   rm_code: this.props.rm_code
-      // }
-      // await this.props.getResumeDetail(this.props.rm_code, memoData)
-      // // await this.getResumeDetail(memoData)
     } catch (err) {
       console.log(err)
     }
@@ -1287,13 +1320,12 @@ export default class People extends Component {
   )
 
   async componentDidMount() {
-    this._isMounted = await true
     await this.fetch()
     await this.fetchPosition()
   }
 
   componentWillUnmount() {
-    this._isMounted = false
+    this.signal.cancel('people unmount')
   }
 
   render() {
@@ -1592,3 +1624,5 @@ export default class People extends Component {
     )
   }
 }
+
+export default withRouter(People)

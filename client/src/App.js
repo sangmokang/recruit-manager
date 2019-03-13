@@ -26,7 +26,6 @@ class App extends Component {
 
   componentDidMount() {
     this._isMounted = true
-
     if (this.isLoggedIn()) {
       this.login(sessionStorage.getItem('user_id'))
     } else this.logout()
@@ -50,6 +49,7 @@ class App extends Component {
               />
             ) : (
               <Route
+                exact
                 path="/"
                 render={() => (
                   <Login
