@@ -7,7 +7,6 @@ import Highlighter from 'react-highlight-words'
 import { sendSMS } from '../../util/UtilFunction'
 
 export default class SMS extends Component {
-  _isMounted = false
   constructor(props) {
     super(props)
     this.state = {
@@ -20,6 +19,8 @@ export default class SMS extends Component {
       visible: false,
       searchText: ''
     }
+
+    this.signal = Axios.CancelToken.source()
 
     this.columns = [
       {
@@ -161,44 +162,55 @@ export default class SMS extends Component {
   }
 
   componentDidMount() {
-    this._isMounted = true
     this.fetch()
   }
 
   componentWillUnmount() {
-    this._isMounted = false
+    this.signal.cancel('sms call canceld')
   }
 
   fetch = () => {
-    Axios.post(API.getSMS, {
-      user_id: this.props.user_id,
-      rm_code: '*'
-    }).then(data => {
-      // const pagination = { ...this.state.pagination }
-      // Read total count from server
-      // pagination.total = data.totalCount
+    Axios.post(
+      API.getSMS,
+      {
+        user_id: this.props.user_id,
+        rm_code: '*'
+      },
+      { cancelToken: this.signal.token }
+    )
+      .then(data => {
+        // const pagination = { ...this.state.pagination }
+        // Read total count from server
+        // pagination.total = data.totalCount
 
-      const dateSortedData = data.data.result.sort((a, b) => {
-        // descend
-        return (
-          new Date(b.modified_date).getTime() -
-          new Date(a.modified_date).getTime()
-        )
+        const dateSortedData = data.data.result.sort((a, b) => {
+          // descend
+          return (
+            new Date(b.modified_date).getTime() -
+            new Date(a.modified_date).getTime()
+          )
+        })
+
+        // const keyAddedData = dateSortedData.map(data => data = data.key)
+
+        for (let i = 0; i < dateSortedData.length; i++) {
+          dateSortedData[i].key = i
+        }
+
+        // console.log('sms-fetch', dateSortedData)
+        this.setState({
+          loading: false,
+          data: dateSortedData
+          // pagination
+        })
       })
-
-      // const keyAddedData = dateSortedData.map(data => data = data.key)
-
-      for (let i = 0; i < dateSortedData.length; i++) {
-        dateSortedData[i].key = i
-      }
-
-      console.log('sms-fetch', dateSortedData)
-      this.setState({
-        loading: false,
-        data: dateSortedData
-        // pagination
+      .catch(error => {
+        if (Axios.isCancel(error)) {
+          console.log('SMS Request canceled', error)
+        } else {
+          console.log(error)
+        }
       })
-    })
   }
 
   // onSelectChange = selectedRowKeys => {

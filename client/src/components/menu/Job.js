@@ -22,7 +22,6 @@ import Highlighter from 'react-highlight-words'
 // import { koreanAgetoYear } from '../../util/UtilFunction'
 
 export default class Job extends Component {
-  _isMounted = false
   constructor(props) {
     super(props)
     this.state = {
@@ -43,6 +42,8 @@ export default class Job extends Component {
       peopleSearchCount: 0,
       fetchAgainLoading: false
     }
+
+    this.signal = Axios.CancelToken.source()
 
     this.columns = [
       {
@@ -276,72 +277,90 @@ export default class Job extends Component {
   }
 
   componentDidMount() {
-    this._isMounted = true
     this.fetch()
   }
 
   componentWillUnmount() {
-    this._isMounted = false
+    this.signal.cancel('job unmount')
   }
 
-
   fetch = () => {
-    Axios.post(API.getPosition, {
-      user_id: this.props.user_id
-    }).then(data => {
-      const pagination = { ...this.state.pagination }
-      // Read total count from server
-      // pagination.total = data.totalCount
-      // console.log('data.data.result', data.data.result)
+    // // cancel the previous request
+    // if (typeof this._source != typeof undefined) {
+    //   this._source.cancel('Operation canceled due to new request.')
+    // }
 
-      let aliveArr = []
-      let expiredArr = []
-      let holdArr = []
+    // // save the new request for cancellation
+    // this._source = Axios.CancelToken.source()
 
-      data.data.result.forEach(data => {
-        if (data.valid === 'alive') aliveArr.push(data)
-        if (data.valid === 'expired') expiredArr.push(data)
-        if (data.valid === 'hold') holdArr.push(data)
+    Axios.post(
+      API.getPosition,
+      {
+        user_id: this.props.user_id
+      },
+      { cancelToken: this.signal.token }
+    )
+      .then(data => {
+        const pagination = { ...this.state.pagination }
+        // Read total count from server
+        // pagination.total = data.totalCount
+        // console.log('data.data.result', data.data.result)
+
+        let aliveArr = []
+        let expiredArr = []
+        let holdArr = []
+
+        data.data.result.forEach(data => {
+          if (data.valid === 'alive') aliveArr.push(data)
+          if (data.valid === 'expired') expiredArr.push(data)
+          if (data.valid === 'hold') holdArr.push(data)
+        })
+
+        aliveArr.sort((a, b) => {
+          // descend
+          return (
+            new Date(b.modified_date).getTime() -
+            new Date(a.modified_date).getTime()
+          )
+        })
+
+        holdArr.sort((a, b) => {
+          // descend
+          return (
+            new Date(b.modified_date).getTime() -
+            new Date(a.modified_date).getTime()
+          )
+        })
+        expiredArr.sort((a, b) => {
+          // descend
+          return (
+            new Date(b.modified_date).getTime() -
+            new Date(a.modified_date).getTime()
+          )
+        })
+        const positionSort = aliveArr.concat(holdArr).concat(expiredArr)
+
+        const ketAddedPositionSort = positionSort.map((row, i) => {
+          const each = Object.assign({}, row)
+          each.key = i
+          return each
+        })
+
+        // console.log('fetch-positionSort', ketAddedPositionSort)
+
+        this.setState({
+          loading: false,
+          data: ketAddedPositionSort,
+          pagination
+        })
       })
-
-      aliveArr.sort((a, b) => {
-        // descend
-        return (
-          new Date(b.modified_date).getTime() -
-          new Date(a.modified_date).getTime()
-        )
+      .catch(error => {
+        if (Axios.isCancel(error)) {
+          console.log('Job Request canceled', error)
+        } else {
+          console.log(error)
+        }
       })
-
-      holdArr.sort((a, b) => {
-        // descend
-        return (
-          new Date(b.modified_date).getTime() -
-          new Date(a.modified_date).getTime()
-        )
-      })
-      expiredArr.sort((a, b) => {
-        // descend
-        return (
-          new Date(b.modified_date).getTime() -
-          new Date(a.modified_date).getTime()
-        )
-      })
-      const positionSort = aliveArr.concat(holdArr).concat(expiredArr)
-
-      const ketAddedPositionSort = positionSort.map((row, i) => {
-        const each = Object.assign({}, row)
-        each.key = i
-        return each
-      })
-
-      // console.log('fetch-positionSort', ketAddedPositionSort)
-
-      this.setState({
-        loading: false,
-        data: ketAddedPositionSort,
-        pagination
-      })
-    })
   }
 
   onLeftClick = async () => {
