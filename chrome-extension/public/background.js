@@ -1,5 +1,4 @@
 /*global chrome*/
-
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.action) {
     case 'popupOpen': {
@@ -45,12 +44,20 @@ chrome.extension.onConnect.addListener(function(port) {
           user = response.user;
           console.log('user is already logged in.');
         }
-
-        await getURL();
-        await getHTML();
-        await getHistory();
-        await crawlCandidate();
-        await compileMessage(port);
+        const myPort = port;
+        try {
+          await getURL();
+          await getHTML();
+          await getHistory();
+          await crawlCandidate();
+          // await chrome.storage.local.get(null, response => {
+          //   console.log(response);
+          //   // port.portMessage(response);
+          // });
+        } catch (error) {
+          console.log(error);
+        }
+        await compileMessage(myPort);
         // chrome.storage.local.get(null, response => {
         //   console.log(response);
         //   port.postMessage(response);
@@ -111,64 +118,69 @@ const getHTML = () => {
   });
 };
 
-const getHistory = () => {
+function read() {
   return new Promise((resolve, reject) => {
-    resolve(
-      chrome.storage.local.get(null, response => {
-        fetch('http://128.199.203.161:8500/extension/view_history', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Origin': '*'
-          },
-          body: JSON.stringify({
-            user_id: response.user.user_id,
-            user_name: response.user.user_name,
-            url: response.url
-          })
-        });
-      })
-    )
-      .then(data => data.json())
-      .then(result => chrome.storage.local.set({ history: result }))
-      .catch(error => console.log(error));
+    chrome.storage.local.get(null, function(obj) {
+      resolve(obj);
+    });
   });
+}
+
+const getHistory = async () => {
+  const api = 'http://128.199.203.161:8500/extension/view_history';
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Origin': '*'
+  };
+  let storage = {};
+  await read().then(data => {
+    storage.data = data;
+  });
+  const data = await fetch(api, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify({
+      user_id: storage.data.user.user_id,
+      user_name: storage.data.user.user_name,
+      url: storage.data.url
+    })
+  });
+  const json = await data.json();
+  console.log(json);
+  await chrome.storage.local.set({ history: json });
 };
 
-const crawlCandidate = () => {
+const crawlCandidate = async () => {
   const api = 'http://128.199.203.161:8500/extension/parsing';
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Origin': '*'
   };
-  return new Promise((resolve, reject) => {
-    resolve(
-      chrome.storage.local.get(null, response => {
-        const input = {
-          user_id: response.user.user_id,
-          user_name: response.user.user_name,
-          url: response.url,
-          html: response.html
-        };
-        console.log('crawl inputs: ', input);
-        fetch(api, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify(input)
-        });
-      })
-    )
-      .then(data => data.json())
-      .then(json => chrome.storage.local.set({ candidate: json.result }))
-      .catch(error => console.log(error));
+  let storage = {};
+  await read().then(data => {
+    storage.data = data;
   });
+  const data = await fetch(api, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify({
+      user_id: storage.data.user.user_id,
+      user_name: storage.data.user.user_name,
+      url: storage.data.url,
+      html: storage.data.html
+    })
+  });
+  const json = await data.json();
+  console.log(json);
+  await chrome.storage.local.set({ candidate: json });
 };
 
-const compileMessage = port => {
+const compileMessage = myPort => {
+  let message = {};
   return new Promise((resolve, reject) => {
     resolve(
       chrome.storage.local.get(null, response => {
-        const message = {
+        message = {
           user: response.user,
           url: response.url,
           html: response.html,
@@ -176,11 +188,10 @@ const compileMessage = port => {
           resumeCount: response.resumeCount,
           candidate: response.candidate
         };
-        return message;
+        console.log(message);
+        myPort.postMessage(message);
       })
-    )
-      .then(message => port.postMessage(message))
-      .catch(error => console.log(error));
+    ).catch(error => console.log(error));
   });
 };
 
