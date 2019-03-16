@@ -1,6 +1,14 @@
 /*global chrome*/
 import React, { Component } from 'react';
-import { Button, Col, Container, Form, ListGroup, Row } from 'react-bootstrap';
+import {
+  Button,
+  Col,
+  Container,
+  Form,
+  ListGroup,
+  Row,
+  Table
+} from 'react-bootstrap';
 import Axios from 'axios';
 import Api from './utils/api';
 
@@ -15,6 +23,7 @@ class App extends Component {
       smsCount: 0,
       history: {},
       candidate: {},
+      ratings: [],
       positions: [],
       selectedPosition: null,
       positionDetail: '',
@@ -103,8 +112,8 @@ class App extends Component {
         user_id: this.state.user.user_id,
         rm_code: this.state.candidate.rm_code,
         position: position,
-        body: body,
-        client: 'll'
+        body: `${position} | ${this.state.user.user_name} 헤드헌터 | ${body}`,
+        client: 'chrome-extension'
       });
       await this.viewMemo();
     } catch (err) {
@@ -120,13 +129,18 @@ class App extends Component {
     this.setState({ memo: memo.data.result });
   };
 
-  deleteMemo = async () => {
-    // const memo = await Axios.post(Api.deleteMemo, {
-    //   user_id: this.state.user.user_id,
-    //   memo_id: '' // need to change
-    // });
-    // return memo;
-    alert('testing delete memo button!');
+  deleteMemo = async memo_id => {
+    const memo = await Axios.post(Api.deleteMemo, {
+      user_id: this.state.user.user_id,
+      memo_id
+    });
+    // still testing
+    try {
+      memo();
+      await this.viewMemo();
+    } catch (error) {
+      alert(error);
+    }
   };
 
   mailSubmit = event => {
@@ -253,17 +267,21 @@ class App extends Component {
     port.postMessage('Requesting crawling');
     port.onMessage.addListener(response => {
       if (response.user && response.user.check === true) {
+        const sortRatings = response.candidate.result.rate.sort((a, b) => {
+          return b.score - a.score;
+        });
         this.setState({
           user: response.user,
           history: response.history,
           candidate: response.candidate.result,
+          ratings: sortRatings,
           isLoggedIn: true,
           fetchingCrawlingData: false,
           resumeCount: response.resumeCount
         });
       } else {
         alert('Unauthorized user');
-        this.setState({ fetchingUserData: false });
+        this.setState({ fetchingUserData: false, fetchingCrawlingData: false });
       }
     });
   };
@@ -294,6 +312,7 @@ class App extends Component {
       mailCount,
       smsCount,
       candidate,
+      ratings,
       positions,
       positionDetail,
       selectedPosition,
@@ -331,17 +350,16 @@ class App extends Component {
           )
         ) : (
           <div>
-            <Button
-              style={{ float: 'right' }}
-              size="sm"
-              onClick={this.crawling}
+            <h2
+              className="text-center"
+              style={{
+                backgroundColor: '#0169D8',
+                color: 'white',
+                fontFamily: 'Georgia'
+              }}
             >
-              저장
-            </Button>
-            <Button style={{ float: 'right' }} size="sm" onClick={this.reset}>
-              초기화
-            </Button>
-            <h2 className="text-center">Recruit Manager</h2>
+              Recruit Manager
+            </h2>
             <br />
             <Row>
               <Col>Resume: {resumeCount || 0}</Col>
@@ -359,6 +377,43 @@ class App extends Component {
               <Col className="text-right">{user.user_email || 'null'}</Col>
             </Row>
             <hr />
+            {this.state.fetchingCrawlingData ? (
+              <div>
+                <Button
+                  style={{ float: 'right' }}
+                  size="sm"
+                  onClick={this.crawling}
+                  disabled
+                >
+                  저장
+                </Button>
+                <Button
+                  style={{ float: 'right' }}
+                  size="sm"
+                  onClick={this.reset}
+                  disabled
+                >
+                  초기화
+                </Button>
+              </div>
+            ) : (
+              <div>
+                <Button
+                  style={{ float: 'right' }}
+                  size="sm"
+                  onClick={this.crawling}
+                >
+                  저장
+                </Button>
+                <Button
+                  style={{ float: 'right' }}
+                  size="sm"
+                  onClick={this.reset}
+                >
+                  초기화
+                </Button>
+              </div>
+            )}
             <Row>
               <Col>[History]</Col>
             </Row>
@@ -368,7 +423,7 @@ class App extends Component {
                   ? history.result.map(each => {
                       return <p>{each}</p>;
                     })
-                  : '없음!'}
+                  : 'new candidate'}
               </Col>
             </Row>
             <hr />
@@ -404,7 +459,7 @@ class App extends Component {
                           ? positions.data.result.map(position => {
                               return (
                                 <option as="button" size="sm">
-                                  {position.title}
+                                  {position.company} | {position.title}
                                 </option>
                               );
                             })
@@ -427,6 +482,7 @@ class App extends Component {
                         메모를 작성해주세요.
                       </Form.Control.Feedback>
                     </Form.Group>
+
                     <div>
                       <Button type="submit" size="sm" inline>
                         입력
@@ -443,7 +499,7 @@ class App extends Component {
             <Row>
               <Col>
                 <ListGroup>
-                  {memo && memo.length ? (
+                  {memo && memo.length && Array.isArray(memo) ? (
                     memo.map(line => {
                       return (
                         <ListGroup.Item
@@ -451,9 +507,14 @@ class App extends Component {
                           className="p-1"
                           style={{ fontSize: 14 }}
                           action
-                          onClick={this.deleteMemo}
                         >
                           {line.note}
+                          <Button
+                            size="sm"
+                            onClick={() => this.deleteMemo(line.memo_id)}
+                          >
+                            삭제
+                          </Button>
                         </ListGroup.Item>
                       );
                     })
@@ -468,6 +529,39 @@ class App extends Component {
                     </ListGroup.Item>
                   )}
                 </ListGroup>
+              </Col>
+            </Row>
+            <hr />
+            <Row>
+              <Col>
+                <details>
+                  <summary>[적합도]</summary>
+                  <br />
+                  <div style={{ fontSize: '0.75em' }}>
+                    <Table striped bordered hover>
+                      <thead>
+                        <tr>
+                          <th>Company</th>
+                          <th>Title</th>
+                          <th>Score</th>
+                        </tr>
+                      </thead>
+                      {ratings
+                        ? ratings.map(rate => {
+                            return (
+                              <tbody>
+                                <tr>
+                                  <td>{rate.company}</td>
+                                  <td>{rate.title}</td>
+                                  <td>{rate.score}</td>
+                                </tr>
+                              </tbody>
+                            );
+                          })
+                        : null}
+                    </Table>
+                  </div>
+                </details>
               </Col>
             </Row>
             <hr />
@@ -577,7 +671,7 @@ class App extends Component {
 
                     <Form.Group as={Row} controlId="mailPositionDetail">
                       <Form.Label column sm={2}>
-                        상세정보
+                        디테일
                       </Form.Label>
                       <Col sm={10}>
                         <Form.Control
