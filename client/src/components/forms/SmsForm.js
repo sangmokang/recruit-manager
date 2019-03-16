@@ -143,12 +143,6 @@ class SmsForm extends React.Component {
       }
     }
 
-    let receivers =
-      selectedRows.length > 1
-        ? selectedRows.map((row, index) => row.name).join(',')
-        : // ? selectedRows.map((row, index) => row.name).join(',')
-          null
-
     if (!optionList) {
       optionList = positionData
         .filter(position => position.valid === 'alive')
@@ -165,22 +159,21 @@ class SmsForm extends React.Component {
         ))
     }
 
-    console.log('selectedRows[0]', selectedRows[0])
-
-    let smsName
-    // let positionRule
-    let smsContent = ''
     let recipientPlaceholder
+    let receiversMobile = ''
+    let smsContent = ''
+
+    Array.isArray(selectedRows) &&
+      selectedRows.forEach((row, index) => {
+        if (selectedRows[index].mobile)
+          receiversMobile += `${selectedRows[index].mobile},`
+        else receiversMobile += `${selectedRows[index].recipient},`
+      })
+    receiversMobile = receiversMobile.slice(0, -1)
 
     if (selectedRows.length === 0) {
-      smsName = ''
-      // positionRule = [{ required: false }]
       recipientPlaceholder = '한 명만 보낼 수 있습니다. 폰 번호를 입력해주세요.'
     } else {
-      smsName = receivers || selectedRows[0].mobile
-      // positionRule = [
-      //   { required: true, message: 'Please fill in the content.' }
-      // ]
       smsContent = `안녕하세요, 어제 제안드렸던 ${position} 에 대해서 어떻게 생각해보셨는지 문의차 다시 문자 드립니다. 간략히 검토후 의향에 대해서 회신 주시면 감사하겠습니다.`
       recipientPlaceholder = ''
     }
@@ -222,23 +215,24 @@ class SmsForm extends React.Component {
           {...formItemLayout}
         >
           {getFieldDecorator('receiver', {
-            initialValue: smsName,
+            initialValue: receiversMobile,
             rules: [
               {
                 validator: this.checkReceiverValue
               }
             ]
-            // initialValue: receivers || selectedRows[0].name
-          })(<Input placeholder={recipientPlaceholder} />)}
+          })(
+            <Input.TextArea
+              placeholder={recipientPlaceholder}
+              autosize={{ minRows: 1, maxRows: 35 }}
+            />
+          )}
         </Form.Item>
 
         {selectedRows.length !== 0 ? (
           <Form.Item label="Positions: " {...formItemLayout} hasFeedback>
-            {getFieldDecorator('select', {
-              // rules: positionRule
-            })(
+            {getFieldDecorator('select', {})(
               <Select
-                // value={position}
                 showSearch
                 style={{ width: '90 %' }}
                 optionFilterProp="children"
@@ -258,7 +252,12 @@ class SmsForm extends React.Component {
           {getFieldDecorator('content', {
             initialValue: smsContent,
             rules: [{ required: true, message: 'Please fill in the content.' }]
-          })(<Input.TextArea rows={4} onChange={this.checkSmsLength} />)}
+          })(
+            <Input.TextArea
+              autosize={{ minRows: 4, maxRows: 16 }}
+              onChange={this.checkSmsLength}
+            />
+          )}
           <Row>
             <Col span={2} style={{ textAlign: 'left' }}>
               <Tooltip placement="left" title={leftTooltip}>
