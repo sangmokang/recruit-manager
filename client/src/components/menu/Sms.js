@@ -290,19 +290,10 @@ export default class SMS extends Component {
   // }
 
   smsModal = () => {
-    let title
-    if (this.state.selectedRows.length === 0) {
-      title = 'SMS'
-    } else {
-      this.state.selectedRows.length > 1
-        ? (title = `SMS ${this.state.selectedRows[0].mobile} 외`)
-        : (title = `SMS ${this.state.selectedRows[0].mobile}`)
-    }
-
     return (
       <div>
         <Modal
-          title={title}
+          title="SMS"
           visible={this.state.visible}
           onOk={this.handleOk}
           onCancel={this.handleCancel}

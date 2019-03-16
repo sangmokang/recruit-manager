@@ -320,25 +320,22 @@ class People extends Component {
   }
 
   smsModal = () => {
-    // let receiversMobileNumber =
-    //   this.state.selectedRows.length > 1
-    //     ? this.state.selectedRows.map((row, index) => row.mobile).join(',')
-    //     : null
-
-    let title
+    let title = ''
     if (this.state.selectedRows.length === 0) {
       title = 'SMS'
     } else {
-      this.state.selectedRows.length > 1
-        ? (title = `SMS ${this.state.selectedRows[0].mobile} 외`)
-        : (title = `SMS ${this.state.selectedRows[0].mobile}`)
+      title += 'SMS'
+      this.state.selectedRows.forEach((row, index) => {
+        title += ` ${this.state.selectedRows[index].name} ${
+          this.state.selectedRows[index].mobile
+        }`
+      })
     }
 
     return (
       <div>
         <Modal
           title={title}
-          // title="SMS"
           visible={this.state.smsVisible}
           onOk={this.handleSmsOk}
           onCancel={this.handleSmsCancel}
