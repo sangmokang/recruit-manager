@@ -28,33 +28,16 @@ chrome.extension.onConnect.addListener(function(port) {
   port.onMessage.addListener(async function(msg) {
     console.log('Received: ' + msg);
     if (msg === 'Requesting crawling') {
-      let user = '';
-      await chrome.storage.local.get(['user'], async function(response) {
-        if (!response.user) {
-          await chrome.identity.getProfileUserInfo(async function(result) {
-            await chrome.storage.local.set({
-              resumeCount: 0,
-              mailCount: 0,
-              smsCount: 0
-            });
-            user = await validateEmail(result.email);
-            console.log('user', user);
-          });
-        } else {
-          user = response.user;
-          console.log('user is already logged in.');
-        }
-        const myPort = port;
-        try {
-          await getURL();
-          await getHTML();
-          await getHistory();
-          await crawlCandidate();
-        } catch (error) {
-          console.log(error);
-        }
-        await compileMessage(myPort);
-      });
+      const myPort = port;
+      try {
+        await getURL();
+        await getHTML();
+        await getHistory();
+        await crawlCandidate();
+      } catch (error) {
+        console.log(error);
+      }
+      await compileMessage(myPort);
     } else if (msg === 'Requesting reset')
       chrome.storage.local.set(
         {
@@ -164,7 +147,10 @@ const crawlCandidate = async () => {
   });
   const json = await data.json();
   console.log(json);
-  await chrome.storage.local.set({ candidate: json });
+  await chrome.storage.local.set({
+    candidate: json,
+    resumeCount: storage.data.resumeCount + 1
+  });
 };
 
 const compileMessage = myPort => {
