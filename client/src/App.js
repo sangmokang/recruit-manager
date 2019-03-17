@@ -36,29 +36,35 @@ class App extends Component {
   }
 
   render() {
+    const { isLoggedIn } = this.state
+    if (!isLoggedIn) {
+      return (
+        <Router>
+          <div id="App">
+            <Navbar />
+            <Switch>
+              <Route
+                path="/"
+                render={() => (
+                  <Login isLoggedIn={isLoggedIn} login={this.login} />
+                )}
+              />
+            </Switch>
+          </div>
+        </Router>
+      )
+    }
+
     return (
       <Router>
         <div id="App">
           <Navbar />
           <Switch>
-            {this.state.isLoggedIn ? (
-              <Route
-                exact
-                path="/"
-                render={() => <People user_id={this.state.user_id} />}
-              />
-            ) : (
-              <Route
-                exact
-                path="/"
-                render={() => (
-                  <Login
-                    isLoggedIn={this.state.isLoggedIn}
-                    login={this.login}
-                  />
-                )}
-              />
-            )}
+            <Route
+              exact
+              path="/"
+              render={() => <People user_id={this.state.user_id} />}
+            />
 
             <Route
               exact
