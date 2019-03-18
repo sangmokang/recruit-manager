@@ -44,7 +44,9 @@ class App extends Component {
       fetchingUserData: false,
       fetchingCrawlingData: false,
       validated: false,
-      user: {}
+      user: {},
+      url: '',
+      records: []
     };
   }
 
@@ -58,10 +60,11 @@ class App extends Component {
 
   fetchUser = async () => {
     try {
-      await chrome.storage.local.get(['user'], response => {
+      await chrome.storage.local.get(['user', 'saved', 'url'], response => {
         if (response.user && response.user.check === true) {
           this.setState({
-            user: response.user
+            user: response.user,
+            candidate: response.saved
           });
         }
       });
@@ -264,13 +267,13 @@ class App extends Component {
     port.postMessage('Requesting crawling');
     port.onMessage.addListener(response => {
       if (response.user && response.user.check === true) {
-        const sortRatings = response.candidate.result.rate.sort((a, b) => {
+        const sortRatings = response.candidate.rate.sort((a, b) => {
           return b.score - a.score;
         });
         this.setState({
           user: response.user,
           history: response.history,
-          candidate: response.candidate.result,
+          candidate: response.candidate,
           ratings: sortRatings,
 
           fetchingCrawlingData: false,
