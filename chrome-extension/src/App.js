@@ -207,7 +207,7 @@ class App extends Component {
     Axios.post(Api.sendSMS, {
       user_id: this.state.user.user_id,
       rm_code: this.state.candidate.rm_code,
-      recipient: this.candidate.mobile,
+      recipient: this.state.candidate.mobile,
       body: this.state.sms.content,
       position: this.state.selectedPosition
     });
