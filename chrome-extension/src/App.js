@@ -161,7 +161,6 @@ class App extends Component {
   };
 
   nextMail = async () => {
-    alert(JSON.stringify(this.state.mailList));
     try {
       const { mailKey, mailList } = this.state;
       if (mailKey === 0 && mailList[0][0]) {
