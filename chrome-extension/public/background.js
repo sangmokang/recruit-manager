@@ -16,8 +16,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
           });
         }
       });
-      await getURL();
-      await loadCandidate();
       break;
     }
     default: {
@@ -29,8 +27,8 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 chrome.extension.onConnect.addListener(function(port) {
   port.onMessage.addListener(async function(msg) {
     console.log('Received: ' + msg);
+    const myPort = port;
     if (msg === 'Requesting crawling') {
-      const myPort = port;
       try {
         await getURL();
         await getHTML();
@@ -41,6 +39,10 @@ chrome.extension.onConnect.addListener(function(port) {
       }
       await records();
       await compileMessage(myPort);
+    } else if (msg === 'Requesting existing candidate data') {
+      await getURL();
+      await loadCandidate();
+      await cacheMessage(myPort);
     } else if (msg === 'Requesting reset')
       chrome.storage.local.set(
         {
@@ -95,7 +97,6 @@ const loadCandidate = () => {
         let record = response.records[i];
         let candidateId = record.candidate.rm_code.substring(13);
         if (candidateUrl.includes(candidateId)) {
-          console.log(record.candidate);
           resolve(chrome.storage.local.set({ saved: record.candidate }));
           break;
         } else {
@@ -209,6 +210,17 @@ const compileMessage = myPort => {
         };
         console.log(message);
         myPort.postMessage(message);
+      })
+    ).catch(error => console.log(error));
+  });
+};
+
+const cacheMessage = myPort => {
+  return new Promise((resolve, reject) => {
+    resolve(
+      chrome.storage.local.get(['saved'], response => {
+        console.log(response.saved);
+        myPort.postMessage(response.saved);
       })
     ).catch(error => console.log(error));
   });

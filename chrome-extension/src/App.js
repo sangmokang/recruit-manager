@@ -41,21 +41,23 @@ class App extends Component {
         }으로 제안드리오니 메일 검토를 부탁드리겠습니다. 감사합니다.`,
         sign: '\n커리어셀파 강상모 드림. 010-3929-7682'
       },
-      fetchingUserData: false,
       fetchingCrawlingData: false,
       validated: false,
       user: {},
       url: '',
-      records: []
+      records: [],
+      mailList: [],
+      mailKey: 0
     };
   }
 
   componentDidMount() {
     this.fetchUser();
-    this.fetchPosition();
     this.getResumeCount();
     this.getCount('mailCount');
     this.getCount('smsCount');
+    this.fetchPosition();
+    this.loadExistingCandidateData();
   }
 
   fetchUser = async () => {
@@ -63,8 +65,7 @@ class App extends Component {
       await chrome.storage.local.get(['user', 'saved', 'url'], response => {
         if (response.user && response.user.check === true) {
           this.setState({
-            user: response.user,
-            candidate: response.saved
+            user: response.user
           });
         }
       });
@@ -144,6 +145,91 @@ class App extends Component {
     }
   };
 
+  fetchMail = async () => {
+    try {
+      const mails = await Axios.post(Api.getMail, {
+        user_id: this.state.user.user_id,
+        rm_code: this.state.candidate.rm_code,
+        email: this.state.candidate.email
+      });
+      this.setState(prevState => ({
+        mailList: [...prevState.mailList, mails.data.result]
+      }));
+    } catch (err) {
+      alert(err);
+    }
+  };
+
+  nextMail = async () => {
+    try {
+      const { mailKey, mailList } = this.state;
+      if (mailKey === 0 && mailList[0][0]) {
+        const { body, client, position } = mailList[0][0];
+        this.setState(prevState => ({
+          selectedPosition: position,
+          mail: {
+            title: `${client} | ${position}`,
+            content: body,
+            sign: `\n커리어셀파 헤드헌터 강상모 \n+82 010 3929 7682 \nwww.careersherpa.co.kr`
+          },
+          mailKey: prevState.mailKey + 1
+        }));
+        alert('메일을 불러왔습니다');
+      } else if (mailKey > 0 && mailList[0][mailKey]) {
+        const { body, client, position } = mailList[0][mailKey];
+        this.setState(prevState => ({
+          selectedPosition: position,
+          mail: {
+            title: `${client} | ${position}`,
+            content: body,
+            sign: `\n커리어셀파 헤드헌터 강상모 \n+82 010 3929 7682 \nwww.careersherpa.co.kr`
+          },
+          mailKey: prevState.mailKey + 1
+        }));
+        alert('이메일을 불러왔습니다');
+      } else {
+        alert('더 이상 메일이 없습니다');
+      }
+    } catch (err) {
+      alert(err);
+    }
+  };
+
+  priorMail = async () => {
+    try {
+      const { mailKey, mailList } = this.state;
+      if (mailKey === 0 && mailList[0][0]) {
+        const { body, client, position } = mailList[0][0];
+        this.setState(prevState => ({
+          selectedPosition: position,
+          mail: {
+            title: `${client} | ${position}`,
+            content: body,
+            sign: `\n커리어셀파 헤드헌터 강상모 \n+82 010 3929 7682 \nwww.careersherpa.co.kr`
+          }
+        }));
+        alert('메일을 불러왔습니다');
+      }
+      if (mailKey > 0 && mailList[0][mailKey - 1]) {
+        const { body, client, position } = mailList[0][mailKey - 1];
+        this.setState(prevState => ({
+          selectedPosition: position,
+          mail: {
+            title: `${client} | ${position}`,
+            content: body,
+            sign: `\n커리어셀파 헤드헌터 강상모 \n+82 010 3929 7682 \nwww.careersherpa.co.kr`
+          },
+          mailKey: prevState.mailKey - 1
+        }));
+        alert('이메일을 불러왔습니다');
+      } else {
+        alert('더 이상 메일이 없습니다');
+      }
+    } catch (err) {
+      alert(err);
+    }
+  };
+
   mailSubmit = event => {
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
@@ -151,16 +237,9 @@ class App extends Component {
       event.stopPropagation();
     } else {
       event.preventDefault();
-      this.setState({ validated: true });
+      this.setState({ validated: true, mailKey: 0 });
       this.sendMail();
     }
-  };
-
-  fetchMail = () => {
-    Axios.post(Api.getMail, {
-      user_id: this.state.user.user_id,
-      rm_code: this.state.candidate.rm_code
-    });
   };
 
   sendMail = () => {
@@ -247,6 +326,19 @@ class App extends Component {
     });
   };
 
+  loadExistingCandidateData = () => {
+    var port = chrome.extension.connect({
+      name: 'Load Existing Candidate Data Communication'
+    });
+    port.postMessage('Requesting existing candidate data');
+    port.onMessage.addListener(saved => {
+      this.setState({
+        candidate: saved,
+        ratings: saved.rate
+      });
+    });
+  };
+
   reset = () => {
     var port = chrome.extension.connect({
       name: 'Resetting Communication'
@@ -270,6 +362,7 @@ class App extends Component {
         const sortRatings = response.candidate.rate.sort((a, b) => {
           return b.score - a.score;
         });
+        this.fetchMail();
         this.setState({
           user: response.user,
           history: response.history,
@@ -281,27 +374,7 @@ class App extends Component {
         });
       } else {
         alert('Unauthorized user');
-        this.setState({ fetchingUserData: false, fetchingCrawlingData: false });
-      }
-    });
-  };
-
-  requestUserIdentity = () => {
-    this.setState({ fetchingUserData: true });
-    var port = chrome.extension.connect({
-      name: 'User Email Communication'
-    });
-    port.postMessage('Requesting user info');
-    port.onMessage.addListener(response => {
-      if (response.user && response.user.check === true) {
-        this.setState({
-          user: response.user,
-
-          fetchingUserData: false
-        });
-      } else {
-        alert('Unauthorized user');
-        this.setState({ fetchingUserData: false });
+        this.setState({ fetchingCrawlingData: false });
       }
     });
   };
@@ -635,11 +708,23 @@ class App extends Component {
                   </Form.Group>
                   <Form.Group as={Row}>
                     <Col sm={9} />
-                    <Button column sm={2} size="sm" variant="outline-warning">
+                    <Button
+                      onClick={this.priorMail}
+                      column
+                      sm={2}
+                      size="sm"
+                      variant="outline-warning"
+                    >
                       <i className="fas fa-arrow-left" />
                     </Button>
                     <Col sm={2}>
-                      <Button column sm={2} size="sm" variant="outline-warning">
+                      <Button
+                        onClick={this.nextMail}
+                        column
+                        sm={2}
+                        size="sm"
+                        variant="outline-warning"
+                      >
                         <i className="fas fa-arrow-right" />
                       </Button>
                     </Col>
