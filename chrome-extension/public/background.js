@@ -1,11 +1,11 @@
 /*global chrome*/
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   switch (message.action) {
     case 'popupOpen': {
       console.log('popup is open...');
-      chrome.storage.local.get(['user'], function(response) {
+      chrome.storage.local.get(['user'], response => {
         if (!response.user) {
-          chrome.identity.getProfileUserInfo(function(result) {
+          chrome.identity.getProfileUserInfo(result => {
             validateEmail(result.email);
             chrome.storage.local.set({
               resumeCount: 0,
@@ -27,8 +27,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 chrome.extension.onConnect.addListener(function(port) {
   port.onMessage.addListener(async function(msg) {
     console.log('Received: ' + msg);
+    const myPort = port;
     if (msg === 'Requesting crawling') {
-      const myPort = port;
       try {
         await getURL();
         await getHTML();
@@ -37,13 +37,19 @@ chrome.extension.onConnect.addListener(function(port) {
       } catch (error) {
         console.log(error);
       }
+      await records();
       await compileMessage(myPort);
+    } else if (msg === 'Requesting existing candidate data') {
+      await getURL();
+      await loadCandidate();
+      await cacheMessage(myPort);
     } else if (msg === 'Requesting reset')
       chrome.storage.local.set(
         {
           resumeCount: 0,
           mailCount: 0,
-          smsCount: 0
+          smsCount: 0,
+          records: []
         },
         response => console.log(response)
       );
@@ -77,6 +83,26 @@ const getURL = () => {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, ([currentTab]) => {
       resolve(chrome.storage.local.set({ url: currentTab.url }));
+    });
+  });
+};
+
+const loadCandidate = () => {
+  console.log('loading candidate');
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(['records', 'url'], response => {
+      const candidateUrl = response.url.substring(28);
+      console.log('candidateUrl', candidateUrl);
+      for (let i = 0; i < response.records.length; i++) {
+        let record = response.records[i];
+        let candidateId = record.candidate.rm_code.substring(13);
+        if (candidateUrl.includes(candidateId)) {
+          resolve(chrome.storage.local.set({ saved: record.candidate }));
+          break;
+        } else {
+          console.log('no it does not include');
+        }
+      }
     });
   });
 };
@@ -153,6 +179,20 @@ const crawlCandidate = async () => {
   });
 };
 
+const records = () => {
+  chrome.storage.local.get({ records: [], candidate: {} }, function(result) {
+    const records = result.records;
+    if (result.candidate.code === 200) {
+      records.push({ candidate: result.candidate.result });
+      chrome.storage.local.set({ records: records }, function() {
+        chrome.storage.local.get('records', function(result) {
+          console.log(result.records);
+        });
+      });
+    }
+  });
+};
+
 const compileMessage = myPort => {
   let message = {};
   return new Promise((resolve, reject) => {
@@ -164,10 +204,23 @@ const compileMessage = myPort => {
           html: response.html,
           history: response.history,
           resumeCount: response.resumeCount,
-          candidate: response.candidate
+          candidate: response.candidate.result,
+          records: response.records,
+          saved: response.saved
         };
         console.log(message);
         myPort.postMessage(message);
+      })
+    ).catch(error => console.log(error));
+  });
+};
+
+const cacheMessage = myPort => {
+  return new Promise((resolve, reject) => {
+    resolve(
+      chrome.storage.local.get(['saved'], response => {
+        console.log(response.saved);
+        myPort.postMessage(response.saved);
       })
     ).catch(error => console.log(error));
   });
