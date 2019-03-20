@@ -88,7 +88,7 @@ class App extends Component {
   };
 
   fetchPositionDetail = () => {
-    const selectedPosition = this.state.selectedPosition;
+    const { selectedPosition } = this.state;
     const positions = this.state.positions.data.result;
     for (let i = 0; i < positions.length; i++) {
       if (selectedPosition.includes(positions[i].title)) {
@@ -335,9 +335,13 @@ class App extends Component {
     });
     port.postMessage('Requesting existing candidate data');
     port.onMessage.addListener(saved => {
+      const sortRatings = saved.rate.sort((a, b) => {
+        return b.score - a.score;
+      });
       this.setState({
         candidate: saved,
-        ratings: saved.rate
+        ratings: sortRatings,
+        fetchingCrawlingData: true
       });
       this.fetchMail();
     });
@@ -353,6 +357,7 @@ class App extends Component {
       mailCount: 0,
       smsCount: 0
     });
+    return;
   };
 
   crawling = () => {
@@ -383,6 +388,10 @@ class App extends Component {
     });
   };
 
+  setPosition = selectedPosition => {
+    this.setState({ selectedPosition }, () => this.fetchPositionDetail());
+  };
+
   render() {
     const {
       resumeCount,
@@ -390,7 +399,6 @@ class App extends Component {
       smsCount,
       candidate,
       ratings,
-      positions,
       positionDetail,
       selectedPosition,
       memo,
@@ -449,7 +457,9 @@ class App extends Component {
                           <tbody>
                             <tr>
                               <td>{rate.company}</td>
-                              <td>{rate.title}</td>
+                              <td onClick={() => this.setPosition(rate.title)}>
+                                {rate.title}
+                              </td>
                               <td>{rate.score}</td>
                             </tr>
                           </tbody>
@@ -695,38 +705,6 @@ class App extends Component {
               onSubmit={e => this.memoSubmit(e)}
             >
               <Form.Row>
-                <Form.Group as={Col} controlId="selectedPosition">
-                  <Form.Control
-                    as="select"
-                    size="sm"
-                    required
-                    onChange={event =>
-                      this.setState(
-                        {
-                          selectedPosition: event.target.value,
-                          mail: {
-                            ...mail,
-                            title: event.target.value
-                          }
-                        },
-                        () => this.fetchPositionDetail()
-                      )
-                    }
-                  >
-                    <option>Position List</option>
-                    {positions && positions.data
-                      ? positions.data.result.map(position => {
-                          return (
-                            <option as="button" size="sm">
-                              {position.company} | {position.title}
-                            </option>
-                          );
-                        })
-                      : null}
-                  </Form.Control>
-                </Form.Group>
-              </Form.Row>
-              <Form.Row>
                 <Form.Group as={Col} controlId="validationMemo">
                   <Form.Control
                     type="text"
@@ -762,9 +740,9 @@ class App extends Component {
                 memo.map(line => {
                   return (
                     <ListGroup.Item
-                      variant="light"
+                      variant="secondary"
                       className="p-1"
-                      style={{ fontSize: 14 }}
+                      style={{ fontSize: '0.75em' }}
                       action
                     >
                       {line.note}
@@ -780,9 +758,9 @@ class App extends Component {
               ) : (
                 <ListGroup.Item
                   action
-                  variant="light"
+                  variant="secondary"
                   className="p-1"
-                  style={{ fontSize: 14 }}
+                  style={{ fontSize: '0.75em' }}
                 >
                   메모가 없습니다
                 </ListGroup.Item>
@@ -805,30 +783,23 @@ class App extends Component {
         </Row>
         <hr />
         <Row>
-          <Col>Resume: {resumeCount || 0}</Col>
+          <Col>Resume: {resumeCount}</Col>
           <Col>Mail: {mailCount}</Col>
           <Col>SMS: {smsCount}</Col>
           <Col className="text-right">
-            {user.user_name ||
-              'Unauthorized User' | user.user_company ||
-              'company'}
+            {user.user_name || 'Unauthorized User'}
           </Col>
-          <Col>
-            {this.state.fetchingCrawlingData ? (
-              <Button
-                style={{ float: 'right' }}
-                size="sm"
-                onClick={this.reset}
-                disabled
-              >
-                초기화
-              </Button>
-            ) : (
-              <Button style={{ float: 'right' }} size="sm" onClick={this.reset}>
-                초기화
-              </Button>
-            )}
-          </Col>
+        </Row>
+        <br />
+        <Row>
+          <Button
+            variant="outline-secondary"
+            block
+            size="sm"
+            onClick={this.reset}
+          >
+            초기화
+          </Button>
         </Row>
       </Container>
     );

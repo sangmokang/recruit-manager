@@ -51,7 +51,7 @@ chrome.extension.onConnect.addListener(function(port) {
           smsCount: 0,
           records: []
         },
-        response => console.log(response)
+        () => console.log('Reset counts and records')
       );
   });
 });
