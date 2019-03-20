@@ -70,8 +70,10 @@ class People extends Component {
     this.signal = Axios.CancelToken.source()
   }
 
-  handleChange = (pagination, filters, sorter) => {
-    console.log('Various parameters', pagination, filters, sorter)
+  handleChange = (pagination, filters, sorter, ...rest) => {
+    // handleChange = (pagination, filters, sorter, extra, ...rest) => {
+    // console.log('Various parameters', pagination, filters, sorter, extra: { currentDataSource: [] })
+    // console.log('Various parameters', pagination, filters, sorter, rest)
     this.setState({
       // filteredInfo: filters,
       sortedInfo: sorter
@@ -397,7 +399,7 @@ class People extends Component {
         { cancelToken: this._source.token }
       )
         .then(res => {
-          console.log('getResumeDetail_res', res.data.result)
+          // console.log('getResumeDetail_res', res.data.result)
 
           this.setState({
             resumeDetailData: res.data.result
@@ -1589,9 +1591,24 @@ class People extends Component {
           <p style={{ marginLeft: 8 }}>
             {hasSelected ? `Selected ${selectedRowKeys.length} items` : ''}
           </p>
+          {this.state.dataSource.length &&
+          this.state.dataSource.length > 0 &&
+          !this.state.searchCount &&
+          !this.state.searchText ? (
+            <span>
+              총 {this.state.dataSource.length} 개의 레쥬메를 보유하고 있습니다.
+            </span>
+          ) : null}
           {this.state.searchCount > 0 ? (
             <span>{this.state.searchCount} 개의 검색 결과가 있습니다.</span>
           ) : null}
+          {/* {this.state.dataSource.length &&
+          this.state.dataSource.length > 0 &&
+          this.state.searchCount > 0 ? (
+            <span style={{ float: 'right', marginRight: 5, marginBottom: 16 }}>
+              {this.state.searchCount}/{this.state.dataSource.length}
+            </span>
+          ) : null} */}
           <Table
             columns={columns}
             bordered
@@ -1602,7 +1619,7 @@ class People extends Component {
             rowSelection={rowSelection}
             onRow={record => ({
               onClick: () => {
-                console.log('record', record)
+                // console.log('record', record)
                 this.handleClick(record)
               }
             })}
