@@ -42,7 +42,9 @@ class App extends Component {
         sign: '\n커리어셀파 강상모 드림. 010-3929-7682'
       },
       fetchingCrawlingData: false,
-      validated: false,
+      validatedMail: false,
+      validatedSms: false,
+      validatedMemo: false,
       user: {},
       url: '',
       records: [],
@@ -104,7 +106,7 @@ class App extends Component {
       event.stopPropagation();
     }
     event.preventDefault();
-    this.setState({ validated: true });
+    this.setState({ validatedMemo: true });
     this.writeMemo(this.state.newNote, this.state.selectedPosition);
   };
 
@@ -132,11 +134,11 @@ class App extends Component {
   };
 
   deleteMemo = async memo_id => {
+    // still testing
     const memo = await Axios.post(Api.deleteMemo, {
       user_id: this.state.user.user_id,
       memo_id
     });
-    // still testing
     try {
       memo();
       await this.viewMemo();
@@ -237,7 +239,7 @@ class App extends Component {
       event.stopPropagation();
     } else {
       event.preventDefault();
-      this.setState({ validated: true, mailKey: 0 });
+      this.setState({ validatedMail: true, mailKey: 0 });
       this.sendMail();
     }
   };
@@ -280,7 +282,7 @@ class App extends Component {
       event.stopPropagation();
     } else {
       event.preventDefault();
-      this.setState({ validated: true });
+      this.setState({ validatedSms: true });
       this.sendSMS();
     }
   };
@@ -323,6 +325,7 @@ class App extends Component {
           this.setState({ [key]: 1 });
         });
       }
+      alert('송부되었습니다!');
     });
   };
 
@@ -393,24 +396,17 @@ class App extends Component {
       memo,
       mail,
       sms,
-      validated,
+      validatedMail,
+      validatedSms,
+      validatedMemo,
       user,
       history
     } = this.state;
 
     return (
       <Container>
-        <div>
-          <h3
-            className="text-center"
-            style={{
-              backgroundColor: '#0169D8',
-              color: 'white',
-              fontFamily: 'Georgia',
-              display: 'inline'
-            }}
-          >
-            Recruit Manager
+        <Row>
+          <Col className="pullRight">
             {this.state.fetchingCrawlingData ? (
               <Button
                 variant="outline-danger"
@@ -430,31 +426,395 @@ class App extends Component {
                 저장
               </Button>
             )}
-          </h3>
-          <Row />
-          <br />
-          <Row>
-            <Col>Resume: {resumeCount || 0}</Col>
-            <Col />
-            <Col className="text-right">
-              {user.user_name || 'Unauthorized User'}
-            </Col>
-          </Row>
-          <Row>
-            <Col>Mail: {mailCount}</Col>
-            <Col />
-            <Col className="text-right">{user.user_company || 'company'}</Col>
-          </Row>
-          <Row>
-            <Col>SMS: {smsCount}</Col>
-            <Col />
-            <Col className="text-right">
-              {user.user_email || 'Unauthorized User'}
-            </Col>
-          </Row>
-          <hr />
-          {this.state.fetchingCrawlingData ? (
-            <div>
+          </Col>
+        </Row>
+
+        <Row>
+          <Col>
+            <details open={true}>
+              <summary>[적합도]</summary>
+              <br />
+              <div style={{ fontSize: '0.75em' }}>
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>Company</th>
+                      <th>Title</th>
+                      <th>Score</th>
+                    </tr>
+                  </thead>
+                  {ratings
+                    ? ratings.map(rate => {
+                        return (
+                          <tbody>
+                            <tr>
+                              <td>{rate.company}</td>
+                              <td>{rate.title}</td>
+                              <td>{rate.score}</td>
+                            </tr>
+                          </tbody>
+                        );
+                      })
+                    : null}
+                </Table>
+              </div>
+            </details>
+          </Col>
+        </Row>
+
+        <hr />
+
+        <Row>
+          <Col>
+            <details open={true}>
+              <summary>[SMS]</summary>
+              <br />
+              <Form
+                noValidate
+                validated={validatedSms}
+                onSubmit={e => this.smsSubmit(e)}
+              >
+                <Form.Group as={Row} controlId="smsRecipient">
+                  <Form.Label column sm={2}>
+                    수신인
+                  </Form.Label>
+                  <Col sm={10}>
+                    <Form.Control
+                      size="sm"
+                      value={
+                        candidate && candidate.mobile ? candidate.mobile : null
+                      }
+                      onChange={event =>
+                        this.setState({
+                          candidate: {
+                            ...candidate,
+                            mobile: event.target.value
+                          }
+                        })
+                      }
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      전화번호를 입력해주세요.
+                    </Form.Control.Feedback>
+                  </Col>
+                </Form.Group>
+
+                <Form.Group as={Row} controlId="smsContent">
+                  <Form.Label column sm={2}>
+                    내용
+                  </Form.Label>
+                  <Col sm={10}>
+                    <Form.Control
+                      as="textarea"
+                      size="sm"
+                      rows="2"
+                      required
+                      value={sms.content}
+                      onChange={event =>
+                        this.setState({
+                          sms: {
+                            ...sms,
+                            content: event.target.value
+                          }
+                        })
+                      }
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      문자를 입력해주세요.
+                    </Form.Control.Feedback>
+                  </Col>
+                </Form.Group>
+
+                <Form.Group as={Row}>
+                  <Col sm={9} />
+                  <Button column sm={2} size="sm" variant="outline-warning">
+                    <i className="fas fa-arrow-left" />
+                  </Button>
+                  <Col sm={2}>
+                    <Button column sm={2} size="sm" variant="outline-warning">
+                      <i className="fas fa-arrow-right" />
+                    </Button>
+                  </Col>
+                </Form.Group>
+                <Button type="submit" block size="sm">
+                  <i class="fas fa-comment"> 문자 보내기</i>
+                </Button>
+              </Form>
+            </details>
+          </Col>
+        </Row>
+
+        <hr />
+
+        <Row>
+          <Col>
+            <details>
+              <summary>[Mail]</summary>
+              <br />
+              <Form
+                noValidate
+                validated={validatedMail}
+                onSubmit={e => this.mailSubmit(e)}
+              >
+                <Form.Group as={Row} controlId="emailRecipient">
+                  <Form.Label column sm={2}>
+                    수신인
+                  </Form.Label>
+                  <Col sm={10}>
+                    <Form.Control
+                      size="sm"
+                      required
+                      value={
+                        candidate && candidate.email ? candidate.email : null
+                      }
+                      onChange={event =>
+                        this.setState({
+                          candidate: {
+                            ...candidate,
+                            email: event.target.value
+                          }
+                        })
+                      }
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      이메일을 입력해주세요.
+                    </Form.Control.Feedback>
+                  </Col>
+                </Form.Group>
+
+                <Form.Group as={Row} controlId="mailTitle">
+                  <Form.Label column sm={2}>
+                    제목
+                  </Form.Label>
+                  <Col sm={10}>
+                    <Form.Control
+                      type="text"
+                      size="sm"
+                      required
+                      value={selectedPosition}
+                      onChange={event =>
+                        this.setState({
+                          mail: {
+                            ...mail,
+                            title: event.target.value
+                          }
+                        })
+                      }
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      메일 제목을 작성해주세요.
+                    </Form.Control.Feedback>
+                  </Col>
+                </Form.Group>
+                <Form.Group as={Row} controlId="mailContent">
+                  <Form.Label column sm={2}>
+                    내용
+                  </Form.Label>
+                  <Col sm={10}>
+                    <Form.Control
+                      as="textarea"
+                      size="sm"
+                      rows="2"
+                      required
+                      value={mail.content}
+                      onChange={event =>
+                        this.setState({
+                          mail: {
+                            ...mail,
+                            content: event.target.value
+                          }
+                        })
+                      }
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      메일을 작성해주세요.
+                    </Form.Control.Feedback>
+                  </Col>
+                </Form.Group>
+                <Form.Group as={Row}>
+                  <Col sm={9} />
+                  <Button
+                    onClick={this.priorMail}
+                    column
+                    sm={2}
+                    size="sm"
+                    variant="outline-warning"
+                  >
+                    <i className="fas fa-arrow-left" />
+                  </Button>
+                  <Col sm={2}>
+                    <Button
+                      onClick={this.nextMail}
+                      column
+                      sm={2}
+                      size="sm"
+                      variant="outline-warning"
+                    >
+                      <i className="fas fa-arrow-right" />
+                    </Button>
+                  </Col>
+                </Form.Group>
+
+                <Form.Group as={Row} controlId="mailPositionDetail">
+                  <Form.Label column sm={2}>
+                    디테일
+                  </Form.Label>
+                  <Col sm={10}>
+                    <Form.Control
+                      as="textarea"
+                      size="sm"
+                      rows="3"
+                      required
+                      value={positionDetail || '디테일 없음'}
+                      onChange={event =>
+                        this.setState({
+                          positionDetail: event.target.value
+                        })
+                      }
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      포지션 디테일을 작성해주세요.
+                    </Form.Control.Feedback>
+                  </Col>
+                </Form.Group>
+                <Button type="submit" block size="sm">
+                  <i class="fas fa-envelope"> 메일 보내기</i>
+                </Button>
+              </Form>
+            </details>
+          </Col>
+        </Row>
+
+        <hr />
+
+        <Row>
+          <Col>
+            <Form
+              noValidate
+              validated={validatedMemo}
+              onSubmit={e => this.memoSubmit(e)}
+            >
+              <Form.Row>
+                <Form.Group as={Col} controlId="selectedPosition">
+                  <Form.Control
+                    as="select"
+                    size="sm"
+                    required
+                    onChange={event =>
+                      this.setState(
+                        {
+                          selectedPosition: event.target.value,
+                          mail: {
+                            ...mail,
+                            title: event.target.value
+                          }
+                        },
+                        () => this.fetchPositionDetail()
+                      )
+                    }
+                  >
+                    <option>Position List</option>
+                    {positions && positions.data
+                      ? positions.data.result.map(position => {
+                          return (
+                            <option as="button" size="sm">
+                              {position.company} | {position.title}
+                            </option>
+                          );
+                        })
+                      : null}
+                  </Form.Control>
+                </Form.Group>
+              </Form.Row>
+              <Form.Row>
+                <Form.Group as={Col} controlId="validationMemo">
+                  <Form.Control
+                    type="text"
+                    size="sm"
+                    placeholder="메모"
+                    required
+                    onChange={event =>
+                      this.setState({ newNote: event.target.value })
+                    }
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    메모를 작성해주세요.
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <div>
+                  <Button type="submit" size="sm" inline>
+                    입력
+                  </Button>
+                  <Button onClick={this.viewMemo} size="sm">
+                    조회
+                  </Button>
+                </div>
+              </Form.Row>
+            </Form>
+            <hr />
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <ListGroup>
+              {memo && memo.length && Array.isArray(memo) ? (
+                memo.map(line => {
+                  return (
+                    <ListGroup.Item
+                      variant="light"
+                      className="p-1"
+                      style={{ fontSize: 14 }}
+                      action
+                    >
+                      {line.note}
+                      <Button
+                        size="sm"
+                        onClick={() => this.deleteMemo(line.memo_id)}
+                      >
+                        삭제
+                      </Button>
+                    </ListGroup.Item>
+                  );
+                })
+              ) : (
+                <ListGroup.Item
+                  action
+                  variant="light"
+                  className="p-1"
+                  style={{ fontSize: 14 }}
+                >
+                  메모가 없습니다
+                </ListGroup.Item>
+              )}
+            </ListGroup>
+          </Col>
+        </Row>
+        <hr />
+        <Row>
+          <Col>[History]</Col>
+        </Row>
+        <Row>
+          <Col>
+            {history && history.result
+              ? history.result.map(each => {
+                  return <p>{each}</p>;
+                })
+              : 'new candidate'}
+          </Col>
+        </Row>
+        <hr />
+        <Row>
+          <Col>Resume: {resumeCount || 0}</Col>
+          <Col>Mail: {mailCount}</Col>
+          <Col>SMS: {smsCount}</Col>
+          <Col className="text-right">
+            {user.user_name ||
+              'Unauthorized User' | user.user_company ||
+              'company'}
+          </Col>
+          <Col>
+            {this.state.fetchingCrawlingData ? (
               <Button
                 style={{ float: 'right' }}
                 size="sm"
@@ -463,386 +823,13 @@ class App extends Component {
               >
                 초기화
               </Button>
-            </div>
-          ) : (
-            <div>
+            ) : (
               <Button style={{ float: 'right' }} size="sm" onClick={this.reset}>
                 초기화
               </Button>
-            </div>
-          )}
-          <Row>
-            <Col>[History]</Col>
-          </Row>
-          <Row>
-            <Col>
-              {history && history.result
-                ? history.result.map(each => {
-                    return <p>{each}</p>;
-                  })
-                : 'new candidate'}
-            </Col>
-          </Row>
-          <hr />
-          <Row />
-          <Row>
-            <Col>
-              <Form
-                noValidate
-                validated={validated}
-                onSubmit={e => this.memoSubmit(e)}
-              >
-                <Form.Row>
-                  <Form.Group as={Col} controlId="selectedPosition">
-                    <Form.Control
-                      as="select"
-                      size="sm"
-                      required
-                      onChange={event =>
-                        this.setState(
-                          {
-                            selectedPosition: event.target.value,
-                            mail: {
-                              ...mail,
-                              title: event.target.value
-                            }
-                          },
-                          () => this.fetchPositionDetail()
-                        )
-                      }
-                    >
-                      <option>Position List</option>
-                      {positions && positions.data
-                        ? positions.data.result.map(position => {
-                            return (
-                              <option as="button" size="sm">
-                                {position.company} | {position.title}
-                              </option>
-                            );
-                          })
-                        : null}
-                    </Form.Control>
-                  </Form.Group>
-                </Form.Row>
-                <Form.Row>
-                  <Form.Group as={Col} controlId="validationMemo">
-                    <Form.Control
-                      type="text"
-                      size="sm"
-                      placeholder="메모"
-                      required
-                      onChange={event =>
-                        this.setState({ newNote: event.target.value })
-                      }
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      메모를 작성해주세요.
-                    </Form.Control.Feedback>
-                  </Form.Group>
-
-                  <div>
-                    <Button type="submit" size="sm" inline>
-                      입력
-                    </Button>
-                    <Button onClick={this.viewMemo} size="sm">
-                      조회
-                    </Button>
-                  </div>
-                </Form.Row>
-              </Form>
-              <hr />
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <ListGroup>
-                {memo && memo.length && Array.isArray(memo) ? (
-                  memo.map(line => {
-                    return (
-                      <ListGroup.Item
-                        variant="light"
-                        className="p-1"
-                        style={{ fontSize: 14 }}
-                        action
-                      >
-                        {line.note}
-                        <Button
-                          size="sm"
-                          onClick={() => this.deleteMemo(line.memo_id)}
-                        >
-                          삭제
-                        </Button>
-                      </ListGroup.Item>
-                    );
-                  })
-                ) : (
-                  <ListGroup.Item
-                    action
-                    variant="light"
-                    className="p-1"
-                    style={{ fontSize: 14 }}
-                  >
-                    메모가 없습니다
-                  </ListGroup.Item>
-                )}
-              </ListGroup>
-            </Col>
-          </Row>
-          <hr />
-          <Row>
-            <Col>
-              <details>
-                <summary>[적합도]</summary>
-                <br />
-                <div style={{ fontSize: '0.75em' }}>
-                  <Table striped bordered hover>
-                    <thead>
-                      <tr>
-                        <th>Company</th>
-                        <th>Title</th>
-                        <th>Score</th>
-                      </tr>
-                    </thead>
-                    {ratings
-                      ? ratings.map(rate => {
-                          return (
-                            <tbody>
-                              <tr>
-                                <td>{rate.company}</td>
-                                <td>{rate.title}</td>
-                                <td>{rate.score}</td>
-                              </tr>
-                            </tbody>
-                          );
-                        })
-                      : null}
-                  </Table>
-                </div>
-              </details>
-            </Col>
-          </Row>
-          <hr />
-          <Row>
-            <Col>
-              <details>
-                <summary>[Mail]</summary>
-                <br />
-                <Form
-                  noValidate
-                  validated={validated}
-                  onSubmit={e => this.mailSubmit(e)}
-                >
-                  <Form.Group as={Row} controlId="emailRecipient">
-                    <Form.Label column sm={2}>
-                      수신인
-                    </Form.Label>
-                    <Col sm={10}>
-                      <Form.Control
-                        size="sm"
-                        required
-                        value={
-                          candidate && candidate.email ? candidate.email : null
-                        }
-                        onChange={event =>
-                          this.setState({
-                            candidate: {
-                              ...candidate,
-                              email: event.target.value
-                            }
-                          })
-                        }
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        이메일을 입력해주세요.
-                      </Form.Control.Feedback>
-                    </Col>
-                  </Form.Group>
-
-                  <Form.Group as={Row} controlId="mailTitle">
-                    <Form.Label column sm={2}>
-                      제목
-                    </Form.Label>
-                    <Col sm={10}>
-                      <Form.Control
-                        type="text"
-                        size="sm"
-                        required
-                        value={selectedPosition}
-                        onChange={event =>
-                          this.setState({
-                            mail: {
-                              ...mail,
-                              title: event.target.value
-                            }
-                          })
-                        }
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        메일 제목을 작성해주세요.
-                      </Form.Control.Feedback>
-                    </Col>
-                  </Form.Group>
-                  <Form.Group as={Row} controlId="mailContent">
-                    <Form.Label column sm={2}>
-                      내용
-                    </Form.Label>
-                    <Col sm={10}>
-                      <Form.Control
-                        as="textarea"
-                        size="sm"
-                        rows="2"
-                        required
-                        value={mail.content}
-                        onChange={event =>
-                          this.setState({
-                            mail: {
-                              ...mail,
-                              content: event.target.value
-                            }
-                          })
-                        }
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        메일을 작성해주세요.
-                      </Form.Control.Feedback>
-                    </Col>
-                  </Form.Group>
-                  <Form.Group as={Row}>
-                    <Col sm={9} />
-                    <Button
-                      onClick={this.priorMail}
-                      column
-                      sm={2}
-                      size="sm"
-                      variant="outline-warning"
-                    >
-                      <i className="fas fa-arrow-left" />
-                    </Button>
-                    <Col sm={2}>
-                      <Button
-                        onClick={this.nextMail}
-                        column
-                        sm={2}
-                        size="sm"
-                        variant="outline-warning"
-                      >
-                        <i className="fas fa-arrow-right" />
-                      </Button>
-                    </Col>
-                  </Form.Group>
-
-                  <Form.Group as={Row} controlId="mailPositionDetail">
-                    <Form.Label column sm={2}>
-                      디테일
-                    </Form.Label>
-                    <Col sm={10}>
-                      <Form.Control
-                        as="textarea"
-                        size="sm"
-                        rows="3"
-                        required
-                        value={positionDetail || '디테일 없음'}
-                        onChange={event =>
-                          this.setState({
-                            positionDetail: event.target.value
-                          })
-                        }
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        포지션 디테일을 작성해주세요.
-                      </Form.Control.Feedback>
-                    </Col>
-                  </Form.Group>
-                  <Button type="submit" block size="sm">
-                    <i class="fas fa-envelope"> 메일 보내기</i>
-                  </Button>
-                </Form>
-              </details>
-            </Col>
-          </Row>
-          <hr />
-          <Row>
-            <Col>
-              <details>
-                <summary>[SMS]</summary>
-                <br />
-                <Form
-                  noValidate
-                  validated={validated}
-                  onSubmit={e => this.smsSubmit(e)}
-                >
-                  <Form.Group as={Row} controlId="smsRecipient">
-                    <Form.Label column sm={2}>
-                      수신인
-                    </Form.Label>
-                    <Col sm={10}>
-                      <Form.Control
-                        size="sm"
-                        value={
-                          candidate && candidate.mobile
-                            ? candidate.mobile
-                            : null
-                        }
-                        onChange={event =>
-                          this.setState({
-                            candidate: {
-                              ...candidate,
-                              mobile: event.target.value
-                            }
-                          })
-                        }
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        전화번호를 입력해주세요.
-                      </Form.Control.Feedback>
-                    </Col>
-                  </Form.Group>
-
-                  <Form.Group as={Row} controlId="smsContent">
-                    <Form.Label column sm={2}>
-                      내용
-                    </Form.Label>
-                    <Col sm={10}>
-                      <Form.Control
-                        as="textarea"
-                        size="sm"
-                        rows="2"
-                        required
-                        value={sms.content}
-                        onChange={event =>
-                          this.setState({
-                            sms: {
-                              ...sms,
-                              content: event.target.value
-                            }
-                          })
-                        }
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        문자를 입력해주세요.
-                      </Form.Control.Feedback>
-                    </Col>
-                  </Form.Group>
-
-                  <Form.Group as={Row}>
-                    <Col sm={9} />
-                    <Button column sm={2} size="sm" variant="outline-warning">
-                      <i className="fas fa-arrow-left" />
-                    </Button>
-                    <Col sm={2}>
-                      <Button column sm={2} size="sm" variant="outline-warning">
-                        <i className="fas fa-arrow-right" />
-                      </Button>
-                    </Col>
-                  </Form.Group>
-                  <Button type="submit" block size="sm">
-                    <i class="fas fa-comment"> 문자 보내기</i>
-                  </Button>
-                </Form>
-              </details>
-            </Col>
-          </Row>
-        </div>
+            )}
+          </Col>
+        </Row>
       </Container>
     );
   }
