@@ -357,6 +357,7 @@ class App extends Component {
       mailCount: 0,
       smsCount: 0
     });
+    return;
   };
 
   crawling = () => {
@@ -389,7 +390,6 @@ class App extends Component {
 
   setPosition = selectedPosition => {
     this.setState({ selectedPosition }, () => this.fetchPositionDetail());
-    alert(selectedPosition);
   };
 
   render() {
@@ -740,9 +740,9 @@ class App extends Component {
                 memo.map(line => {
                   return (
                     <ListGroup.Item
-                      variant="dark"
+                      variant="secondary"
                       className="p-1"
-                      style={{ fontSize: 14 }}
+                      style={{ fontSize: '0.75em' }}
                       action
                     >
                       {line.note}
@@ -758,9 +758,9 @@ class App extends Component {
               ) : (
                 <ListGroup.Item
                   action
-                  variant="dark"
+                  variant="secondary"
                   className="p-1"
-                  style={{ fontSize: 14 }}
+                  style={{ fontSize: '0.75em' }}
                 >
                   메모가 없습니다
                 </ListGroup.Item>
@@ -783,7 +783,7 @@ class App extends Component {
         </Row>
         <hr />
         <Row>
-          <Col>Resume: {resumeCount || 0}</Col>
+          <Col>Resume: {resumeCount}</Col>
           <Col>Mail: {mailCount}</Col>
           <Col>SMS: {smsCount}</Col>
           <Col className="text-right">
@@ -792,28 +792,14 @@ class App extends Component {
         </Row>
         <br />
         <Row>
-          <Col>
-            {this.state.fetchingCrawlingData ? (
-              <Button
-                variant="outline-warning"
-                block
-                size="sm"
-                onClick={this.reset}
-                disabled
-              >
-                초기화
-              </Button>
-            ) : (
-              <Button
-                variant="outline-secondary"
-                block
-                size="sm"
-                onClick={this.reset}
-              >
-                초기화
-              </Button>
-            )}
-          </Col>
+          <Button
+            variant="outline-secondary"
+            block
+            size="sm"
+            onClick={this.reset}
+          >
+            초기화
+          </Button>
         </Row>
       </Container>
     );
