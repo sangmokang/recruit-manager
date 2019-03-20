@@ -82,7 +82,8 @@ function validateEmail(email) {
 const getURL = () => {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, ([currentTab]) => {
-      resolve(chrome.storage.local.set({ url: currentTab.url }));
+      const url = decodeURI(currentTab.url);
+      resolve(chrome.storage.local.set({ url }));
     });
   });
 };
