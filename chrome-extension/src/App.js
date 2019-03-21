@@ -134,13 +134,12 @@ class App extends Component {
   };
 
   deleteMemo = async memo_id => {
-    // still testing
-    const memo = await Axios.post(Api.deleteMemo, {
-      user_id: this.state.user.user_id,
-      memo_id
-    });
     try {
-      memo();
+      await Axios.post(Api.deleteMemo, {
+        user_id: this.state.user.user_id,
+        memo_id
+      });
+      await alert('메모를 삭제했습니다');
       await this.viewMemo();
     } catch (error) {
       alert(error);
@@ -408,11 +407,12 @@ class App extends Component {
       validatedSms,
       validatedMemo,
       user,
-      history
+      history,
+      positions
     } = this.state;
 
     return (
-      <Container>
+      <Container style={{ fontSize: '0.75em' }}>
         <Row>
           <Col className="pullRight">
             {this.state.fetchingCrawlingData ? (
@@ -442,7 +442,7 @@ class App extends Component {
             <details open={true}>
               <summary>[적합도]</summary>
               <br />
-              <div style={{ fontSize: '0.75em' }}>
+              <div>
                 <Table striped bordered hover>
                   <thead>
                     <tr>
@@ -471,6 +471,41 @@ class App extends Component {
             </details>
           </Col>
         </Row>
+
+        <hr />
+
+        <Form.Row>
+          <Form.Group as={Col} controlId="selectedPosition">
+            <Form.Control
+              as="select"
+              size="sm"
+              required
+              onChange={event =>
+                this.setState(
+                  {
+                    selectedPosition: event.target.value,
+                    mail: {
+                      ...mail,
+                      title: event.target.value
+                    }
+                  },
+                  () => this.fetchPositionDetail()
+                )
+              }
+            >
+              <option>Position List</option>
+              {positions && positions.data
+                ? positions.data.result.map(position => {
+                    return (
+                      <option as="button" size="sm">
+                        {position.company} | {position.title}
+                      </option>
+                    );
+                  })
+                : null}
+            </Form.Control>
+          </Form.Group>
+        </Form.Row>
 
         <hr />
 
@@ -739,14 +774,11 @@ class App extends Component {
               {memo && memo.length && Array.isArray(memo) ? (
                 memo.map(line => {
                   return (
-                    <ListGroup.Item
-                      variant="secondary"
-                      className="p-1"
-                      style={{ fontSize: '0.75em' }}
-                      action
-                    >
+                    <ListGroup.Item variant="secondary" className="p-1" action>
                       {line.note}
                       <Button
+                        style={{ float: 'right', fontSize: '0.75em' }}
+                        variant="outline-primary"
                         size="sm"
                         onClick={() => this.deleteMemo(line.memo_id)}
                       >
@@ -756,12 +788,7 @@ class App extends Component {
                   );
                 })
               ) : (
-                <ListGroup.Item
-                  action
-                  variant="secondary"
-                  className="p-1"
-                  style={{ fontSize: '0.75em' }}
-                >
+                <ListGroup.Item action variant="secondary" className="p-1">
                   메모가 없습니다
                 </ListGroup.Item>
               )}
