@@ -1,6 +1,15 @@
 /*global chrome*/
 import React, { Component } from 'react';
-import { Button, Col, Container, Form, ListGroup, Row } from 'react-bootstrap';
+import {
+  Button,
+  ButtonGroup,
+  Col,
+  Container,
+  Dropdown,
+  Form,
+  ListGroup,
+  Row
+} from 'react-bootstrap';
 import Axios from 'axios';
 import Api from './utils/api';
 import Sms from './components/sms/Sms';
@@ -387,23 +396,33 @@ class App extends Component {
         <Row>
           <Col className="pullRight">
             {this.state.fetchingCrawlingData ? (
-              <Button
-                variant="outline-danger"
-                size="sm"
-                style={{ float: 'right' }}
-                disabled
-              >
-                저장
-              </Button>
+              <Dropdown as={ButtonGroup} style={{ float: 'right' }} size="sm">
+                <Button variant="outline-danger" disabled>
+                  저장
+                </Button>
+                <Dropdown.Toggle
+                  split
+                  variant="outline-danger"
+                  id="dropdown-split-basic"
+                />
+                <Dropdown.Menu style={{ fontSize: '0.90em' }}>
+                  <Dropdown.Item onClick={this.reset}>초기화</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
             ) : (
-              <Button
-                variant="outline-danger"
-                size="sm"
-                style={{ float: 'right' }}
-                onClick={this.crawling}
-              >
-                저장
-              </Button>
+              <Dropdown as={ButtonGroup} style={{ float: 'right' }} size="sm">
+                <Button variant="outline-danger" onClick={this.crawling}>
+                  저장
+                </Button>
+                <Dropdown.Toggle
+                  split
+                  variant="outline-danger"
+                  id="dropdown-split-basic"
+                />
+                <Dropdown.Menu style={{ fontSize: '0.80em' }}>
+                  <Dropdown.Item onClick={this.reset}>초기화</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
             )}
           </Col>
         </Row>
@@ -669,17 +688,6 @@ class App extends Component {
           user={user}
           reset={this.reset}
         />
-        <br />
-        <Row>
-          <Button
-            variant="outline-secondary"
-            block
-            size="sm"
-            onClick={this.reset}
-          >
-            초기화
-          </Button>
-        </Row>
         <br />
         <Row>
           <Col>
