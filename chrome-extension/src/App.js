@@ -1,16 +1,11 @@
 /*global chrome*/
 import React, { Component } from 'react';
-import {
-  Button,
-  Col,
-  Container,
-  Form,
-  ListGroup,
-  Row,
-  Table
-} from 'react-bootstrap';
+import { Button, Col, Container, Form, ListGroup, Row } from 'react-bootstrap';
 import Axios from 'axios';
 import Api from './utils/api';
+import Sms from './components/sms/Sms';
+import Footer from './components/footer/Footer';
+import RatingsTable from './components/ratings/RatingsTable.js';
 
 class App extends Component {
   constructor(props) {
@@ -43,7 +38,6 @@ class App extends Component {
       },
       fetchingCrawlingData: false,
       validatedMail: false,
-      validatedSms: false,
       validatedMemo: false,
       user: {},
       url: '',
@@ -104,10 +98,11 @@ class App extends Component {
     if (form.checkValidity() === false) {
       event.preventDefault();
       event.stopPropagation();
+    } else {
+      event.preventDefault();
+      this.setState({ validatedMemo: true });
+      this.writeMemo(this.state.newNote, this.state.selectedPosition);
     }
-    event.preventDefault();
-    this.setState({ validatedMemo: true });
-    this.writeMemo(this.state.newNote, this.state.selectedPosition);
   };
 
   writeMemo = async (body, position) => {
@@ -274,29 +269,6 @@ class App extends Component {
     });
   };
 
-  smsSubmit = event => {
-    const form = event.currentTarget;
-    if (form.checkValidity() === false) {
-      event.preventDefault();
-      event.stopPropagation();
-    } else {
-      event.preventDefault();
-      this.setState({ validatedSms: true });
-      this.sendSMS();
-    }
-  };
-
-  sendSMS = () => {
-    Axios.post(Api.sendSMS, {
-      user_id: this.state.user.user_id,
-      rm_code: this.state.candidate.rm_code,
-      recipient: this.state.candidate.mobile,
-      body: this.state.sms.content,
-      position: this.state.selectedPosition
-    });
-    this.addCount('smsCount');
-  };
-
   getResumeCount = () => {
     const storage = chrome.storage.local;
     storage.get('resumeCount', result => {
@@ -404,7 +376,6 @@ class App extends Component {
       mail,
       sms,
       validatedMail,
-      validatedSms,
       validatedMemo,
       user,
       history,
@@ -437,40 +408,7 @@ class App extends Component {
           </Col>
         </Row>
 
-        <Row>
-          <Col>
-            <details open={true}>
-              <summary>[적합도]</summary>
-              <br />
-              <div>
-                <Table striped bordered hover>
-                  <thead>
-                    <tr>
-                      <th>Company</th>
-                      <th>Title</th>
-                      <th>Score</th>
-                    </tr>
-                  </thead>
-                  {ratings
-                    ? ratings.map(rate => {
-                        return (
-                          <tbody>
-                            <tr>
-                              <td>{rate.company}</td>
-                              <td onClick={() => this.setPosition(rate.title)}>
-                                {rate.title}
-                              </td>
-                              <td>{rate.score}</td>
-                            </tr>
-                          </tbody>
-                        );
-                      })
-                    : null}
-                </Table>
-              </div>
-            </details>
-          </Col>
-        </Row>
+        <RatingsTable ratings={ratings} setPosition={this.setPosition} />
 
         <hr />
 
@@ -509,85 +447,12 @@ class App extends Component {
 
         <hr />
 
-        <Row>
-          <Col>
-            <details open={true}>
-              <summary>[SMS]</summary>
-              <br />
-              <Form
-                noValidate
-                validated={validatedSms}
-                onSubmit={e => this.smsSubmit(e)}
-              >
-                <Form.Group as={Row} controlId="smsRecipient">
-                  <Form.Label column sm={2}>
-                    수신인
-                  </Form.Label>
-                  <Col sm={10}>
-                    <Form.Control
-                      size="sm"
-                      value={
-                        candidate && candidate.mobile ? candidate.mobile : null
-                      }
-                      onChange={event =>
-                        this.setState({
-                          candidate: {
-                            ...candidate,
-                            mobile: event.target.value
-                          }
-                        })
-                      }
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      전화번호를 입력해주세요.
-                    </Form.Control.Feedback>
-                  </Col>
-                </Form.Group>
-
-                <Form.Group as={Row} controlId="smsContent">
-                  <Form.Label column sm={2}>
-                    내용
-                  </Form.Label>
-                  <Col sm={10}>
-                    <Form.Control
-                      as="textarea"
-                      size="sm"
-                      rows="2"
-                      required
-                      value={sms.content}
-                      onChange={event =>
-                        this.setState({
-                          sms: {
-                            ...sms,
-                            content: event.target.value
-                          }
-                        })
-                      }
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      문자를 입력해주세요.
-                    </Form.Control.Feedback>
-                  </Col>
-                </Form.Group>
-
-                <Form.Group as={Row}>
-                  <Col sm={9} />
-                  <Button column sm={2} size="sm" variant="outline-warning">
-                    <i className="fas fa-arrow-left" />
-                  </Button>
-                  <Col sm={2}>
-                    <Button column sm={2} size="sm" variant="outline-warning">
-                      <i className="fas fa-arrow-right" />
-                    </Button>
-                  </Col>
-                </Form.Group>
-                <Button type="submit" block size="sm">
-                  <i class="fas fa-comment"> 문자 보내기</i>
-                </Button>
-              </Form>
-            </details>
-          </Col>
-        </Row>
+        <Sms
+          user={user}
+          candidate={candidate}
+          selectedPosition={selectedPosition}
+          sms={sms}
+        />
 
         <hr />
 
@@ -796,27 +661,14 @@ class App extends Component {
           </Col>
         </Row>
         <hr />
-        <Row>
-          <Col>[History]</Col>
-        </Row>
-        <Row>
-          <Col>
-            {history && history.result
-              ? history.result.map(each => {
-                  return <p>{each}</p>;
-                })
-              : 'new candidate'}
-          </Col>
-        </Row>
-        <hr />
-        <Row>
-          <Col>Resume: {resumeCount}</Col>
-          <Col>Mail: {mailCount}</Col>
-          <Col>SMS: {smsCount}</Col>
-          <Col className="text-right">
-            {user.user_name || 'Unauthorized User'}
-          </Col>
-        </Row>
+        <Footer
+          history={history}
+          resumeCount={resumeCount}
+          mailCount={mailCount}
+          smsCount={smsCount}
+          user={user}
+          reset={this.reset}
+        />
         <br />
         <Row>
           <Button
@@ -827,6 +679,12 @@ class App extends Component {
           >
             초기화
           </Button>
+        </Row>
+        <br />
+        <Row>
+          <Col>
+            <p style={{ color: 'DarkGray' }}>Recruit Manager &copy; 2019</p>
+          </Col>
         </Row>
       </Container>
     );
