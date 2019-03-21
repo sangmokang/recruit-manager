@@ -18,6 +18,7 @@ export default class Footer extends Component {
               : 'new candidate'}
           </Col>
         </Row>
+        <hr />
         <Row>
           <Col>Resume: {resumeCount}</Col>
           <Col>Mail: {mailCount}</Col>
