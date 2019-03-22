@@ -471,6 +471,7 @@ class App extends Component {
           candidate={candidate}
           selectedPosition={selectedPosition}
           sms={sms}
+          addCount={this.addCount}
         />
 
         <hr />

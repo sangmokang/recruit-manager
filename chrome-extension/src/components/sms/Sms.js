@@ -15,11 +15,17 @@ export default class Sms extends Component {
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
       event.preventDefault();
+      alert('전화번호를 입력해주세요');
       event.stopPropagation();
     } else {
-      event.preventDefault();
-      this.setState({ validatedSms: true });
-      this.sendSMS();
+      if (!this.props.sms.content.includes('undefined')) {
+        event.preventDefault();
+        this.setState({ validatedSms: true });
+        this.sendSMS();
+      } else {
+        event.preventDefault();
+        alert('포지션을 선택해주세요');
+      }
     }
   };
 
@@ -49,12 +55,17 @@ export default class Sms extends Component {
               validated={validatedSms}
               onSubmit={e => this.smsSubmit(e)}
             >
+              <Button type="submit" block size="sm">
+                <i class="fas fa-comment"> 문자 보내기</i>
+              </Button>
+              <br />
               <Form.Group as={Row} controlId="smsRecipient">
                 <Form.Label column sm={2}>
                   수신인
                 </Form.Label>
                 <Col sm={10}>
                   <Form.Control
+                    required
                     size="sm"
                     value={
                       candidate && candidate.mobile ? candidate.mobile : null
@@ -95,7 +106,7 @@ export default class Sms extends Component {
                     }
                   />
                   <Form.Control.Feedback type="invalid">
-                    문자를 입력해주세요.
+                    내용을 입력해주세요.
                   </Form.Control.Feedback>
                 </Col>
               </Form.Group>
@@ -111,9 +122,6 @@ export default class Sms extends Component {
                   </Button>
                 </Col>
               </Form.Group>
-              <Button type="submit" block size="sm">
-                <i class="fas fa-comment"> 문자 보내기</i>
-              </Button>
             </Form>
           </details>
         </Col>
