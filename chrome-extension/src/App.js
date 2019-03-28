@@ -40,7 +40,7 @@ class App extends Component {
         sign: `\n커리어셀파 헤드헌터 강상모 \n+82 010 3929 7682 \nwww.careersherpa.co.kr`
       },
       sms: {
-        content: `안녕하세요 ${
+        content: `안녕하세요, ${
           this.selectedPosition
         }으로 제안드리오니 메일 검토를 부탁드리겠습니다. 감사합니다.`,
         sign: '\n커리어셀파 강상모 드림. 010-3929-7682'
@@ -266,6 +266,24 @@ class App extends Component {
     this.addCount('mailCount');
   };
 
+  userUpdateSmsMobile = event => {
+    this.setState({
+      candidate: {
+        ...this.candidate,
+        mobile: event.target.value
+      }
+    });
+  };
+
+  userUpdateSmsContent = event => {
+    this.setState({
+      sms: {
+        ...this.sms,
+        content: event.target.value
+      }
+    });
+  };
+
   updateSmsContent = () => {
     this.setState({
       sms: {
@@ -314,12 +332,13 @@ class App extends Component {
       name: 'Load Existing Candidate Data Communication'
     });
     port.postMessage('Requesting existing candidate data');
-    port.onMessage.addListener(saved => {
-      const sortRatings = saved.rate.sort((a, b) => {
+    port.onMessage.addListener(response => {
+      const sortRatings = response.saved.rate.sort((a, b) => {
         return b.score - a.score;
       });
       this.setState({
-        candidate: saved,
+        history: response.history,
+        candidate: response.saved,
         ratings: sortRatings,
         fetchingCrawlingData: true
       });
@@ -471,6 +490,8 @@ class App extends Component {
           candidate={candidate}
           selectedPosition={selectedPosition}
           sms={sms}
+          handleMobileChange={this.userUpdateSmsMobile}
+          handleContentChange={this.userUpdateSmsContent}
           addCount={this.addCount}
         />
 
@@ -494,9 +515,7 @@ class App extends Component {
                     <Form.Control
                       size="sm"
                       required
-                      value={
-                        candidate && candidate.email ? candidate.email : null
-                      }
+                      defaultValue={candidate.email || null}
                       onChange={event =>
                         this.setState({
                           candidate: {
@@ -546,7 +565,7 @@ class App extends Component {
                       size="sm"
                       rows="2"
                       required
-                      value={mail.content}
+                      defaultValue={mail.content || null}
                       onChange={event =>
                         this.setState({
                           mail: {

@@ -41,6 +41,7 @@ chrome.extension.onConnect.addListener(function(port) {
       await compileMessage(myPort);
     } else if (msg === 'Requesting existing candidate data') {
       await getURL();
+      await getHistory();
       await loadCandidate();
       await cacheMessage(myPort);
     } else if (msg === 'Requesting reset')
@@ -219,9 +220,9 @@ const compileMessage = myPort => {
 const cacheMessage = myPort => {
   return new Promise((resolve, reject) => {
     resolve(
-      chrome.storage.local.get(['saved'], response => {
-        console.log(response.saved);
-        myPort.postMessage(response.saved);
+      chrome.storage.local.get(['saved', 'history'], response => {
+        console.log(response);
+        myPort.postMessage(response);
       })
     ).catch(error => console.log(error));
   });
