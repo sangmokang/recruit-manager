@@ -42,7 +42,12 @@ export default class Sms extends Component {
 
   render() {
     const { validatedSms } = this.state;
-    const { candidate, sms } = this.props;
+    const {
+      candidate,
+      sms,
+      handleMobileChange,
+      handleContentChange
+    } = this.props;
 
     return (
       <Row>
@@ -67,17 +72,8 @@ export default class Sms extends Component {
                   <Form.Control
                     required
                     size="sm"
-                    value={
-                      candidate && candidate.mobile ? candidate.mobile : null
-                    }
-                    onChange={event =>
-                      this.setState({
-                        candidate: {
-                          ...candidate,
-                          mobile: event.target.value
-                        }
-                      })
-                    }
+                    value={candidate.mobile || null}
+                    onChange={event => handleMobileChange(event)}
                   />
                   <Form.Control.Feedback type="invalid">
                     전화번호를 입력해주세요.
@@ -95,15 +91,8 @@ export default class Sms extends Component {
                     size="sm"
                     rows="2"
                     required
-                    value={sms.content}
-                    onChange={event =>
-                      this.setState({
-                        sms: {
-                          ...sms,
-                          content: event.target.value
-                        }
-                      })
-                    }
+                    value={sms.content || null}
+                    onChange={event => handleContentChange(event)}
                   />
                   <Form.Control.Feedback type="invalid">
                     내용을 입력해주세요.
