@@ -30,15 +30,6 @@ export default class Sms extends Component {
   };
 
   sendSMS = () => {
-    alert(
-      JSON.stringify({
-        user_id: this.props.user.user_id,
-        rm_code: this.props.candidate.rm_code,
-        recipient: this.props.candidate.mobile,
-        body: this.props.sms.content,
-        position: this.props.selectedPosition
-      })
-    );
     Axios.post(Api.sendSMS, {
       user_id: this.props.user.user_id,
       rm_code: this.props.candidate.rm_code,

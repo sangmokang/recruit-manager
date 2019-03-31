@@ -81,9 +81,12 @@ class App extends Component {
 
   fetchPosition = async () => {
     try {
-      const positions = await Axios.post(Api.getPosition, {
+      const allPositions = await Axios.post(Api.getPosition, {
         user_id: this.state.user.user_email
       });
+      const positions = allPositions.data.result.filter(
+        item => item.valid === 'alive'
+      );
       this.setState({ positions });
     } catch (err) {
       alert('failed to fetch positions', err);
@@ -91,8 +94,7 @@ class App extends Component {
   };
 
   fetchPositionDetail = () => {
-    const { selectedPosition } = this.state;
-    const positions = this.state.positions.data.result;
+    const { positions, selectedPosition } = this.state;
     for (let i = 0; i < positions.length; i++) {
       if (selectedPosition.includes(positions[i].title)) {
         this.setState({ positionDetail: positions[i].detail });
@@ -470,8 +472,8 @@ class App extends Component {
               }
             >
               <option>Position List</option>
-              {positions && positions.data
-                ? positions.data.result.map(position => {
+              {positions
+                ? positions.map(position => {
                     return (
                       <option as="button" size="sm">
                         {position.company} | {position.title}
