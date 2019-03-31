@@ -153,15 +153,24 @@ class App extends Component {
   };
 
   fetchMail = async () => {
+    const { user_id } = this.state.user;
+    const { rm_code, email } = this.state.candidate;
     try {
-      const mails = await Axios.post(Api.getMail, {
-        user_id: this.state.user.user_id,
-        rm_code: this.state.candidate.rm_code,
-        email: this.state.candidate.email
-      });
+      const mails = await Axios.post(Api.getMail, { user_id, rm_code, email });
       this.setState(prevState => ({
         mailList: [...prevState.mailList, mails.data.result]
       }));
+    } catch (err) {
+      alert(err);
+    }
+  };
+
+  fetchSMS = async () => {
+    const { user_id } = this.state.user;
+    const { rm_code, mobile } = this.state.candidate;
+    try {
+      const texts = await Axios.post(Api.getSMS, { user_id, rm_code, mobile });
+      // alert(JSON.stringify(texts.data.result));
     } catch (err) {
       alert(err);
     }
@@ -345,6 +354,7 @@ class App extends Component {
         fetchingCrawlingData: true
       });
       this.fetchMail();
+      // this.fetchSMS();
     });
   };
 
@@ -567,7 +577,7 @@ class App extends Component {
                       size="sm"
                       rows="2"
                       required
-                      defaultValue={mail.content || null}
+                      value={mail.content || null}
                       onChange={event =>
                         this.setState({
                           mail: {
