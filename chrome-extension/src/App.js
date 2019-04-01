@@ -7,12 +7,12 @@ import {
   Container,
   Dropdown,
   Form,
-  ListGroup,
   Row
 } from 'react-bootstrap';
 import Axios from 'axios';
 import Api from './utils/api';
 import Sms from './components/sms/Sms';
+import Memo from './components/memo/Memo';
 import Footer from './components/footer/Footer';
 import RatingsTable from './components/ratings/RatingsTable.js';
 
@@ -31,8 +31,6 @@ class App extends Component {
       positions: [],
       selectedPosition: null,
       positionDetail: '',
-      memo: [],
-      newNote: '',
       mail: {
         title: '',
         content:
@@ -47,12 +45,13 @@ class App extends Component {
       },
       fetchingCrawlingData: false,
       validatedMail: false,
-      validatedMemo: false,
       user: {},
       url: '',
       records: [],
       mailList: [],
-      mailKey: 0
+      mailKey: 0,
+      smsList: [],
+      smsKey: 0
     };
   }
 
@@ -127,7 +126,7 @@ class App extends Component {
       });
       await this.viewMemo();
     } catch (err) {
-      console.log(err);
+      alert(err);
     }
   };
 
@@ -169,8 +168,10 @@ class App extends Component {
     const { user_id } = this.state.user;
     const { rm_code, mobile } = this.state.candidate;
     try {
-      const texts = await Axios.post(Api.getSMS, { user_id, rm_code, mobile });
-      // alert(JSON.stringify(texts.data.result));
+      const sms = await Axios.post(Api.getSMS, { user_id, rm_code, mobile });
+      this.setState(prevState => ({
+        smsList: [...prevState.mailList, sms.data.result]
+      }));
     } catch (err) {
       alert(err);
     }
@@ -354,7 +355,7 @@ class App extends Component {
         fetchingCrawlingData: true
       });
       this.fetchMail();
-      // this.fetchSMS();
+      this.fetchSMS();
     });
   };
 
@@ -412,11 +413,9 @@ class App extends Component {
       ratings,
       positionDetail,
       selectedPosition,
-      memo,
       mail,
       sms,
       validatedMail,
-      validatedMemo,
       user,
       history,
       positions
@@ -648,69 +647,12 @@ class App extends Component {
 
         <hr />
 
-        <Row>
-          <Col>
-            <Form
-              noValidate
-              validated={validatedMemo}
-              onSubmit={e => this.memoSubmit(e)}
-            >
-              <Form.Row>
-                <Form.Group as={Col} controlId="validationMemo">
-                  <Form.Control
-                    type="text"
-                    size="sm"
-                    placeholder="메모"
-                    required
-                    onChange={event =>
-                      this.setState({ newNote: event.target.value })
-                    }
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    메모를 작성해주세요.
-                  </Form.Control.Feedback>
-                </Form.Group>
+        <Memo
+          user={user}
+          candidate={candidate}
+          selectedPosition={selectedPosition}
+        />
 
-                <div>
-                  <Button type="submit" size="sm" inline>
-                    입력
-                  </Button>
-                  <Button onClick={this.viewMemo} size="sm">
-                    조회
-                  </Button>
-                </div>
-              </Form.Row>
-            </Form>
-            <hr />
-          </Col>
-        </Row>
-        <Row>
-          <Col>
-            <ListGroup>
-              {memo && memo.length && Array.isArray(memo) ? (
-                memo.map(line => {
-                  return (
-                    <ListGroup.Item variant="secondary" className="p-1" action>
-                      {line.note}
-                      <Button
-                        style={{ float: 'right', fontSize: '0.75em' }}
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => this.deleteMemo(line.memo_id)}
-                      >
-                        삭제
-                      </Button>
-                    </ListGroup.Item>
-                  );
-                })
-              ) : (
-                <ListGroup.Item action variant="secondary" className="p-1">
-                  메모가 없습니다
-                </ListGroup.Item>
-              )}
-            </ListGroup>
-          </Col>
-        </Row>
         <hr />
         <Footer
           history={history}

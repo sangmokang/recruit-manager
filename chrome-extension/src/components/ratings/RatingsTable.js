@@ -19,7 +19,7 @@ export default class RatingsTable extends Component {
                   </tr>
                 </thead>
                 {this.props.ratings
-                  ? this.props.ratings.map(rate => {
+                  ? this.props.ratings.slice(6).map(rate => {
                       return (
                         <tbody>
                           <tr>
