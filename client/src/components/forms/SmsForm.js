@@ -18,9 +18,16 @@ class SmsForm extends React.Component {
     e.preventDefault()
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
+        let localRmDataObj = JSON.parse(localStorage.getItem('recruitManager'))
+        if (!localRmDataObj) {
+          localRmDataObj = {}
+        }
+        localRmDataObj.lastSMSNumber = values.receiver
+        localStorage.setItem('recruitManager', JSON.stringify(localRmDataObj))
+
         values.receiver = values.receiver.replace(/-|(\s*)/gi, '')
         values.positionCompany = this.state.positionCompany
-        this.props.writeSmsContent(values)
+        // this.props.writeSmsContent(values)
         console.log('Received values of form: ', values)
       }
     })
@@ -170,6 +177,13 @@ class SmsForm extends React.Component {
         else receiversMobile += `${selectedRows[index].recipient},`
       })
     receiversMobile = receiversMobile.slice(0, -1)
+
+    if (!receiversMobile) {
+      const localRmDataObj = JSON.parse(localStorage.getItem('recruitManager'))
+      if (localRmDataObj && localRmDataObj.lastSMSNumber) {
+        receiversMobile = localRmDataObj.lastSMSNumber
+      }
+    }
 
     if (selectedRows.length === 0) {
       recipientPlaceholder = '한 명만 보낼 수 있습니다. 폰 번호를 입력해주세요.'
