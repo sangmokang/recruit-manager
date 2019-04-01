@@ -35,25 +35,28 @@ class UpdateJobForm extends React.Component {
   handleSubmit = e => {
     e.preventDefault()
     this.props.form.validateFieldsAndScroll((err, values) => {
-      console.log('values', values)
+      // console.log('values', values)
       const under_birth = koreanAgetoYear(values.under_birth)
       const upper_birth = koreanAgetoYear(values.upper_birth)
 
       values.under_birth = under_birth
       values.upper_birth = upper_birth
+      values.keyword = values.keyword.trim()
+      if (values.keyword.slice(-1) === ',') {
+        values.keyword = values.keyword.slice(0, -1)
+      }
 
-      console.log('values2', values)
+      // console.log('values2', values)
       if (!err && this.state.positionTitleStatus !== 'error')
         this.setState({ newPosition: values }, () => {
           this.updatePosition()
         })
     })
-    // this.updatePosition()
   }
 
   updatePosition = async () => {
-    await console.log('selected props: ', this.props.selected.position_id)
-    await console.log('user_id: ', this.props.user_id)
+    // await console.log('selected props: ', this.props.selected.position_id)
+    // await console.log('user_id: ', this.props.user_id)
     // await console.log('updatePosition: ', this.state.newPosition)
     try {
       await Axios.post(API.updatePosition, {
@@ -82,10 +85,8 @@ class UpdateJobForm extends React.Component {
   }
 
   render() {
-    console.log('this.props.selected', this.props.selected)
+    // console.log('this.props.selected', this.props.selected)
     const { getFieldDecorator } = this.props.form
-
-    console.log('getFieldDecorator')
 
     const formItemLayout = {
       labelCol: {
@@ -148,7 +149,7 @@ class UpdateJobForm extends React.Component {
     //   { value: '서울 외', label: '서울 외' }
     // ]
 
-    console.log('this.props-slected,', this.props.selected)
+    // console.log('this.props-slected,', this.props.selected)
     return (
       <Form onSubmit={this.handleSubmit}>
         <Form.Item
@@ -186,7 +187,10 @@ class UpdateJobForm extends React.Component {
           {getFieldDecorator('keyword', {
             initialValue: this.props.selected.keyword
           })(
-            <Input placeholder="키워드가 여러 개인 경우 한 칸 띄고 입력해주세요." />
+            <Input.TextArea
+              placeholder="키워드가 여러 개인 경우 ,를 넣고 한 칸 띄고 입력해주세요."
+              autosize={{ minRows: 1, maxRows: 10 }}
+            />
             // tag 기능 제대로 쓸려면 키워드도 array로 받거나 기호를 사이에 넣어서 저장하고 가져오면 분할하던가 해줘야할듯.
           )}
         </Form.Item>
