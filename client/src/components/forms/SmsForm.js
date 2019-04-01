@@ -27,7 +27,7 @@ class SmsForm extends React.Component {
 
         values.receiver = values.receiver.replace(/-|(\s*)/gi, '')
         values.positionCompany = this.state.positionCompany
-        // this.props.writeSmsContent(values)
+        this.props.writeSmsContent(values)
         console.log('Received values of form: ', values)
       }
     })
