@@ -34,7 +34,7 @@ export default class Memo extends Component {
         rm_code,
         position: position,
         body: `${position} | ${user_name} 헤드헌터 | ${body}`,
-        client: 'chrome-extension'
+        client: 'chrome-extension' // 수정 필요
       });
       await this.viewMemo();
     } catch (err) {
