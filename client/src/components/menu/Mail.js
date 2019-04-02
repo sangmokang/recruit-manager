@@ -194,7 +194,8 @@ export default class Mail extends Component {
       API.getMail,
       {
         user_id: this.props.user_id,
-        rm_code: '*'
+        rm_code: 'null',
+        recipient: 'null'
       },
       { cancelToken: this.signal.token }
     )
