@@ -924,6 +924,7 @@ export default class Job extends Component {
       onChange: this.onSelectChange
     }
 
+    const hasSelected = selectedRowKeys.length > 0
     const hasSelectedOne = selectedRowKeys.length === 1
     const hasSelectedMultiple = selectedRowKeys.length >= 1
     const editButtonToolTip = <span>편집을 위해서는 하나만 선택해주세요.</span>
@@ -1001,6 +1002,17 @@ export default class Job extends Component {
         {visible && <this.jobModal />}
         {updateVisible && <this.updateJobModal />}
         {detailVisible && <this.detailJobModal />}
+        <span style={{ marginLeft: 8 }}>
+          {hasSelected ? `Selected ${selectedRowKeys.length} items` : ''}
+        </span>
+        {this.state.data.length &&
+        this.state.data.length > 0 &&
+        !hasSelected &&
+        !this.state.searchText ? (
+          <span>
+            총 {this.state.data.length} 개의 포지션이 등록되어 있습니다.
+          </span>
+        ) : null}
         <Table
           columns={this.columns}
           bordered
