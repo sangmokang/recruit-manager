@@ -1593,6 +1593,7 @@ class People extends Component {
           </p>
           {this.state.dataSource.length &&
           this.state.dataSource.length > 0 &&
+          !hasSelected &&
           !this.state.searchCount &&
           !this.state.searchText ? (
             <span>

@@ -351,9 +351,19 @@ export default class SMS extends Component {
         >
           Reset
         </Button>
+        <br />
         <span style={{ marginLeft: 8 }}>
           {hasSelected ? `Selected ${selectedRowKeys.length} items` : ''}
         </span>
+
+        {this.state.data.length &&
+        this.state.data.length > 0 &&
+        !hasSelected &&
+        !this.state.searchText ? (
+          <span>
+            총 {this.state.data.length} 건의 문자 전송 내역이 있습니다.
+          </span>
+        ) : null}
         <Table
           columns={this.columns}
           // rowKey={record => record.login.uuid}
