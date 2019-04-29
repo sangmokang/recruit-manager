@@ -36,7 +36,8 @@ class ResumeForm extends React.Component {
         salary_requirement: this.state.newResume.salary_requirement || '',
         working_area: this.state.newResume.working_area || ''
       }).then(res => {
-        console.log('resume added')
+        console.log('res', res)
+        // console.log('resume added')
         this.props.addSuccess()
       })
       await this.props.peopleFetch()

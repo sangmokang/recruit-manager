@@ -13,14 +13,20 @@ export default class Test extends React.Component {
     })
   }
 
+  logout = e => {
+    this.props.logout()
+  }
+
   render() {
+    const { handleClick, logout, user_id } = this.props
+
     return (
       <Menu
-        onClick={this.handleClick}
+        onClick={handleClick}
         selectedKeys={[this.state.current]}
         mode="horizontal"
       >
-        <Menu.Item key="people" onClick={this.handleClick}>
+        <Menu.Item key="people" onClick={handleClick}>
           <Link to="/">
             <span>
               <Icon type="home" />
@@ -28,26 +34,31 @@ export default class Test extends React.Component {
             </span>
           </Link>
         </Menu.Item>
-        <Menu.Item key="job" onClick={this.handleClick}>
+        <Menu.Item key="job" onClick={handleClick}>
           <Link to="/job">
             <span>Job</span>
           </Link>
         </Menu.Item>
-        <Menu.Item key="mail" onClick={this.handleClick}>
+        <Menu.Item key="mail" onClick={handleClick}>
           <Link to="/mail">
             <span>Mail</span>
           </Link>
         </Menu.Item>
-        <Menu.Item key="SMS" onClick={this.handleClick}>
+        <Menu.Item key="SMS" onClick={handleClick}>
           <Link to="/sms">
             <span>SMS</span>
           </Link>
         </Menu.Item>
-        <Menu.Item key="crawling" onClick={this.handleClick}>
+        <Menu.Item key="crawling" onClick={handleClick}>
           <Link to="/crawling">
             <span>Crawling</span>
           </Link>
         </Menu.Item>
+        {user_id && (
+          <Menu.Item key="logout" onClick={logout}>
+            <span>Logout</span>
+          </Menu.Item>
+        )}
       </Menu>
     )
   }
