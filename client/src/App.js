@@ -58,7 +58,7 @@ class App extends Component {
     return (
       <Router>
         <div id="App">
-          <Navbar />
+          <Navbar user_id={this.state.user_id} logout={this.logout} />
           <Switch>
             <Route
               exact

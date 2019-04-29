@@ -56,7 +56,7 @@ class SmsForm extends React.Component {
         positionData: keyAddedResult
       })
       // console.log('position data', data.data.result)
-      console.log('position data + key', keyAddedResult)
+      // console.log('position data + key', keyAddedResult)
     })
   }
 
@@ -67,7 +67,7 @@ class SmsForm extends React.Component {
       this.setState({
         recentSendSMSData: data.data.result
       })
-      console.log('recent SMS DATA ', data.data.result)
+      // console.log('recent SMS DATA ', data.data.result)
     })
   }
 
@@ -202,18 +202,22 @@ class SmsForm extends React.Component {
       beforeSmsContentIndex = recentSendSMSData.length - 1
     }
 
-    if (afterSmsContentIndex > 9) {
+    if (afterSmsContentIndex > recentSendSMSData.length - 1) {
       afterSmsContentIndex = 0
     }
 
     let leftTooltip =
       recentSendSMSData &&
+      recentSendSMSData.length > 1 &&
+      recentSendSMSData[beforeSmsContentIndex] &&
       `이전\nNo. ${beforeSmsContentIndex + 1} : ${
         recentSendSMSData[beforeSmsContentIndex].modified_date
       }`
 
     let rightTooltip =
       recentSendSMSData &&
+      recentSendSMSData.length > 1 &&
+      recentSendSMSData[afterSmsContentIndex] &&
       `다음\nNo. ${afterSmsContentIndex + 1} : ${
         recentSendSMSData[afterSmsContentIndex].modified_date
       }`
@@ -280,7 +284,6 @@ class SmsForm extends React.Component {
                   icon="left"
                   value="large"
                   onClick={this.onLeftClick}
-                  disabled={leftTooltip ? false : true}
                 />
               </Tooltip>
             </Col>
@@ -308,7 +311,6 @@ class SmsForm extends React.Component {
                   icon="right"
                   value="large"
                   onClick={this.onRightClick}
-                  disabled={rightTooltip ? false : true}
                 />
               </Tooltip>
             </Col>
