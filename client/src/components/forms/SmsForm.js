@@ -202,7 +202,7 @@ class SmsForm extends React.Component {
       beforeSmsContentIndex = recentSendSMSData.length - 1
     }
 
-    if (afterSmsContentIndex > 9) {
+    if (afterSmsContentIndex > recentSendSMSData.length - 1) {
       afterSmsContentIndex = 0
     }
 
@@ -284,7 +284,6 @@ class SmsForm extends React.Component {
                   icon="left"
                   value="large"
                   onClick={this.onLeftClick}
-                  disabled={leftTooltip ? false : true}
                 />
               </Tooltip>
             </Col>
@@ -312,7 +311,6 @@ class SmsForm extends React.Component {
                   icon="right"
                   value="large"
                   onClick={this.onRightClick}
-                  disabled={rightTooltip ? false : true}
                 />
               </Tooltip>
             </Col>
