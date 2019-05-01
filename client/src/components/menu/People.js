@@ -1006,8 +1006,8 @@ class People extends Component {
 
     let dateSortedMemo = []
     if (
+      this.state.resumeDetailData[0].memo !== undefined &&
       this.state.resumeDetailData[0].memo !== null &&
-      this.state.resumeDetailData[0].memo &&
       this.state.resumeDetailData[0].memo !== 'null'
     ) {
       dateSortedMemo = this.state.resumeDetailData[0].memo.sort((a, b) => {
@@ -1400,7 +1400,8 @@ class People extends Component {
         title: '핵심 키워드',
         dataIndex: 'keyword',
         align: 'center',
-        width: 120,
+        width: '15%',
+        // width: 100,
         ...this.getColumnSearchProps('keyword')
       },
       {
@@ -1408,7 +1409,7 @@ class People extends Component {
         title: 'Resume Title',
         dataIndex: 'resume_title',
         align: 'center',
-        width: 120,
+        width: 100,
         ...this.getColumnSearchProps('resume_title')
       },
       {
@@ -1426,15 +1427,16 @@ class People extends Component {
         sorter: (a, b) => a.rate - b.rate,
         // defaultSortOrder: 'descend',
         sortOrder: sortedInfo.columnKey === 'rate' && sortedInfo.order,
-        width: 30,
-        align: 'center',
-        ...this.getColumnSearchProps('rate')
+        width: 78,
+        align: 'center'
+        // ...this.getColumnSearchProps('rate')
       },
       {
         key: 'url',
         title: 'URL',
         dataIndex: 'url',
-        width: 50,
+        align: 'center',
+        width: 80,
         render: (text, row, index) => {
           return (
             <a
@@ -1452,7 +1454,7 @@ class People extends Component {
         key: 'website',
         title: 'WEBSITE',
         dataIndex: 'website',
-        width: 60,
+        width: 120,
         align: 'center',
         ...this.getColumnSearchProps('website')
       },
@@ -1611,6 +1613,7 @@ class People extends Component {
             </span>
           ) : null} */}
           <Table
+            style={{ wordBreak: 'break-all', tableLayout: 'fixed' }}
             columns={columns}
             bordered
             dataSource={dataSource}
